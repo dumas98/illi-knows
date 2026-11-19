@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: illi-knows-api
+    runtime: node
+    region: ohio
+    plan: free
+    branch: main
+    buildCommand: npm ci --include=dev && npm run build -w @illi-knows/api
+    startCommand: npm start -w @illi-knows/api
+    healthCheckPath: /api/health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "24"
+      - key: MONGODB_URI
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: ALLOWED_EMAIL_DOMAIN
+        value: illinois.edu
+      - key: REQUIRE_VERIFIED_EMAIL
+        value: "true"
+      - key: DEMO_MODE
+        value: "false"
+      - key: INGEST_API_KEY
+        generateValue: true

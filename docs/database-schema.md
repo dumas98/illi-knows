@@ -1,6 +1,6 @@
 # Database schema (MongoDB)
 
-The Mongoose models live in [`server/models/`](../server/models). This document explains what each collection holds, why it's shaped that way, and how the screens in the [design mock](../mock/illi-knows-ikd.html) read and write it.
+The Mongoose models live in [`api/src/models/`](../api/src/models). This document explains what each collection holds, why it's shaped that way, and how the screens in the [design mock](../mock/illi-knows-ikd.html) read and write it.
 
 Six collections:
 
@@ -26,7 +26,7 @@ erDiagram
 
 All dates are stored as UTC `Date`s. The app shows them in `America/Chicago`.
 
-Shared enums (categories, statuses, reminder options, and so on) are in [`constants.js`](../server/models/constants.js), so the API and the frontend can use the same values.
+Shared enums (categories, statuses, reminder options, and so on) are in [`shared/src/constants.ts`](../shared/src/constants.ts), so the API and the frontend use the same values.
 
 ---
 
@@ -36,9 +36,7 @@ Shared enums (categories, statuses, reminder options, and so on) are in [`consta
 |---|---|---|
 | `name` | String, required | Shown on the attendee list unless the RSVP is anonymous |
 | `email` | String, required, unique | Lowercased campus email |
-| `authProvider` | `sso` \| `password` | Single sign-on is the main path in the mock |
-| `ssoSubject` | String, unique when set | The user's ID from the campus sign-on provider |
-| `passwordHash` | String, `select: false` | Only for `password` accounts. Never returned by default |
+| `firebaseUid` | String, unique when set | Firebase Authentication user ID. Set on first sign-in; accounts created ahead of time (for example with `npm run grant-role`) are linked by email |
 | `roles` | [`student` \| `organizer` \| `admin`] | At least one role. Decides which pages a user sees |
 | `preferences.defaultReminder` | `none` \| `1h` \| `1d` \| `1w` | Pre-fills "Remind me" |
 | `preferences.rsvpAnonymously` | Boolean | Pre-selects anonymous RSVP |
@@ -192,7 +190,7 @@ One document per user per event, created the first time a signed-in user RSVPs, 
 
 | Collection | Index | Serves |
 |---|---|---|
-| users | `email` unique, `ssoSubject` unique when set | Sign-in |
+| users | `email` unique, `firebaseUid` unique when set | Sign-in |
 | organizations | `slug` unique, `members.user` | "Which organizations can I manage?" |
 | places | `key` unique, `aliases`, `geo` 2dsphere | Location matching, a future real map |
 | sources | `(kind, handle)` unique when handle is set, `(kind, active)` | Imports, admin cards |

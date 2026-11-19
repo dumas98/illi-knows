@@ -1,4 +1,15 @@
 .DS_Store
-node_modules/
-.env
 .idea/
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+firebase-debug.log
+firebase-debug.*.log
+ui-debug.log
+.firebase/
+__pycache__/
+.venv/

@@ -1,0 +1,36 @@
+{
+  "name": "illi-knows",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "shared",
+    "api",
+    "web"
+  ],
+  "scripts": {
+    "postinstall": "npm run build -w @illi-knows/shared",
+    "build": "npm run build -w @illi-knows/shared && npm run build -w @illi-knows/api && npm run build -w @illi-knows/web",
+    "dev:api": "npm run dev -w @illi-knows/api",
+    "dev:web": "npm run dev -w @illi-knows/web",
+    "emulators": "firebase emulators:start --only auth --project demo-illi-knows",
+    "seed": "npm run seed -w @illi-knows/api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "test": "npm run test --workspaces --if-present",
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "grant-role": "npm run grant-role -w @illi-knows/api --"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.15.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.8",
+    "firebase-tools": "^15.36.0",
+    "globals": "^17.14.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.73.0"
+  }
+}

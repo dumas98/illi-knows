@@ -4,6 +4,33 @@ A campus events platform. Students discover events on a list, a week grid, or a 
 
 This is a student class project. It isn't affiliated with or endorsed by the University of Illinois.
 
+## Running it locally
+
+Requires Node 24.
+
+```bash
+npm install
+cp api/.env.example api/.env          # set MONGODB_URI and FIREBASE_PROJECT_ID
+cp web/.env.example web/.env.local    # paste the Firebase web config
+npm run seed                          # fills the dev database with a fake semester
+npm run dev:api                       # http://localhost:4000/api/health
+npm run dev:web                       # http://localhost:5173
+```
+
+| Command | What it does |
+|---|---|
+| `npm run check` | Type checks, lint, and API tests (the same as CI) |
+| `npm run seed` | Wipes and refills the database in `MONGODB_URI` with fake data. Refuses to touch the production database (`illi-knows`) |
+| `npm run grant-role -- you@illinois.edu admin` | Gives an account the `organizer` or `admin` role. Works before or after that person first signs in |
+
+| Folder | Contents |
+|---|---|
+| `api/` | Express 5 + TypeScript API, Mongoose models, seed script |
+| `web/` | React + TypeScript + Vite frontend |
+| `shared/` | Enums and API types used by both |
+| `docs/` | [Build plan](docs/build-plan.md), [database schema](docs/database-schema.md) |
+| `mock/` | The approved design mock |
+
 ## Design reference
 
 [`mock/illi-knows-ikd.html`](mock/illi-knows-ikd.html) is the approved clickable mock (version IKD). Open it in a browser. It is the source of truth for layout, copy, colors, and behavior. Every event, person, and number in it is made up.
