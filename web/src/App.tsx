@@ -1,32 +1,51 @@
-import { useEffect, useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Link, RouterProvider, createBrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './auth/AuthProvider';
+import { Layout } from './components/Layout';
+import { Discover } from './pages/Discover';
+import { EventPage } from './pages/EventPage';
+import { Home } from './pages/Home';
+import { ToastProvider } from './ToastProvider';
 
-const API_URL = import.meta.env.VITE_API_URL ?? '';
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { refetchOnWindowFocus: false } }
+});
 
-type Status = 'checking' | 'up' | 'down';
+function NotFound() {
+  return (
+    <section className="panel empty stack">
+      <h1>Page not found</h1>
+      <Link className="btn btn-primary" to="/">
+        Go home
+      </Link>
+    </section>
+  );
+}
+
+function Root() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>
+        <AuthProvider>
+          <Layout />
+        </AuthProvider>
+      </ToastProvider>
+    </QueryClientProvider>
+  );
+}
+
+const router = createBrowserRouter([
+  {
+    element: <Root />,
+    children: [
+      { path: '/', element: <Home /> },
+      { path: '/discover', element: <Discover /> },
+      { path: '/events/:id', element: <EventPage /> },
+      { path: '*', element: <NotFound /> }
+    ]
+  }
+]);
 
 export function App() {
-  const [status, setStatus] = useState<Status>('checking');
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch(`${API_URL}/api/health`, { signal: controller.signal })
-      .then(r => setStatus(r.ok ? 'up' : 'down'))
-      .catch(() => {
-        if (!controller.signal.aborted) setStatus('down');
-      });
-    return () => controller.abort();
-  }, []);
-
-  return (
-    <main className="hero">
-      <p className="kicker">Illi-Knows</p>
-      <h1>
-        Know what&apos;s on before it&apos;s <span className="fly">over</span>
-      </h1>
-      <p className="lede">The new site is being built. The design mock in the repo shows where it&apos;s headed.</p>
-      <p className="status" data-status={status}>
-        API: {status === 'checking' ? 'checking…' : status === 'up' ? 'connected' : 'not reachable'}
-      </p>
-    </main>
-  );
+  return <RouterProvider router={router} />;
 }

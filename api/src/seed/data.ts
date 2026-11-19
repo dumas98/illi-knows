@@ -22,7 +22,7 @@ export const PLACES: PlaceSeed[] = [
   { key: 'theater', name: 'Lincoln theater', aliases: ['lincoln theater'], kind: 'building', map: { x: 395, y: 330, w: 125, h: 85 } },
   { key: 'music', name: 'Music building', aliases: ['music building', 'recital hall'], kind: 'building', map: { x: 590, y: 330, w: 180, h: 80 } },
   { key: 'art', name: 'Art annex', aliases: ['art annex'], kind: 'building', map: { x: 590, y: 422, w: 88, h: 82 } },
-  { key: 'ceramics', name: 'Ceramics studio', aliases: ['ceramics studio', 'ceramics'], kind: 'building', map: { x: 686, y: 422, w: 84, h: 82 } },
+  { key: 'ceramics', name: 'Ceramics', aliases: ['ceramics studio', 'ceramics'], kind: 'building', map: { x: 686, y: 422, w: 84, h: 82 } },
   { key: 'fields', name: 'South fields', aliases: ['south fields'], kind: 'field', map: { x: 250, y: 432, w: 270, h: 72 } }
 ];
 

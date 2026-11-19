@@ -13,3 +13,4 @@ ui-debug.log
 .firebase/
 __pycache__/
 .venv/
+!web/.env.production

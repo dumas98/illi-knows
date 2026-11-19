@@ -1,4 +1,5 @@
 export const CAMPUS_TIMEZONE = 'America/Chicago';
+export const CAMPUS_EMAIL_DOMAIN = 'illinois.edu';
 export const MAP_SIZE = { width: 800, height: 520 } as const;
 
 export const ROLES = ['student', 'organizer', 'admin'] as const;
