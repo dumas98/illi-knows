@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Link, RouterProvider, createBrowserRouter } from 'react-router-dom';
+import { Link, RouterProvider, createBrowserRouter, useRouteError } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthProvider';
 import { Layout } from './components/Layout';
 import { Discover } from './pages/Discover';
@@ -22,6 +22,22 @@ function NotFound() {
   );
 }
 
+function CrashScreen() {
+  const error = useRouteError();
+  return (
+    <main className="wrap page">
+      <section className="panel empty stack" role="alert">
+        <h1>Something went wrong</h1>
+        <p className="muted">This page hit an error, often because a new version of Illi-Knows just went live. Reloading usually fixes it.</p>
+        <button className="btn btn-primary" type="button" onClick={() => window.location.reload()}>
+          Reload the page
+        </button>
+        {import.meta.env.DEV && <pre className="small muted">{String(error)}</pre>}
+      </section>
+    </main>
+  );
+}
+
 function Root() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -37,6 +53,7 @@ function Root() {
 const router = createBrowserRouter([
   {
     element: <Root />,
+    errorElement: <CrashScreen />,
     children: [
       { path: '/', element: <Home /> },
       { path: '/discover', element: <Discover /> },

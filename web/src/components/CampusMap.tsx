@@ -73,7 +73,8 @@ export function CampusMap({ places, events, selectedId = null, highlightId = nul
   const basemap = useBasemap();
   const box = useRef<HTMLDivElement>(null);
   const [pxWidth, setPxWidth] = useState(600);
-  const placeByKey = useMemo(() => new Map(places.map(p => [p.key, p])), [places]);
+  const usable = useMemo(() => places.filter(p => Array.isArray(p.center) && p.center.length === 2), [places]);
+  const placeByKey = useMemo(() => new Map(usable.map(p => [p.key, p])), [usable]);
 
   const markers = useMemo(() => {
     const slots = new Map<string, number>();
@@ -259,14 +260,14 @@ export function CampusMap({ places, events, selectedId = null, highlightId = nul
           </g>
         )}
         <g aria-hidden="true">
-          {places.map(p =>
+          {usable.map(p =>
             p.outline && !['quad', 'green', 'field'].includes(p.kind) ? (
               <path key={p.key} className={eventPlaces.has(p.key) ? 'm-place m-venue' : 'm-place'} d={ringPath(p.outline)} />
             ) : null
           )}
         </g>
         <g aria-hidden="true" style={{ fontSize: 11 * upp, strokeWidth: 3 * upp }}>
-          {places.map(p => {
+          {usable.map(p => {
             const show = eventPlaces.has(p.key) ? labelEvents : labelAll;
             if (!show) return null;
             const [x, y] = project(p.center);
