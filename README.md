@@ -22,6 +22,9 @@ npm run dev:web                       # http://localhost:5173
 | `npm run check` | Type checks, lint, and API tests (the same as CI) |
 | `npm run seed` | Wipes and refills the database in `MONGODB_URI` with fake data. Refuses to touch the production database (`illi-knows`) |
 | `npm run grant-role -- you@illinois.edu admin` | Gives an account the `organizer` or `admin` role. Works before or after that person first signs in |
+| `npm run campus:import -w @illi-knows/api` | Re-downloads the campus from OpenStreetMap: rewrites `web/public/map/campus-basemap.json` and `api/src/seed/campus-places.json`. Run `npm run seed` afterwards |
+
+Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), available under the Open Database License.
 
 | Folder | Contents |
 |---|---|
