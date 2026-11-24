@@ -5,6 +5,7 @@ import { currentUser, requireUser } from '../auth/middleware.js';
 import { unauthorized } from '../lib/errors.js';
 import { parse } from '../lib/validate.js';
 import { Organization, User, type UserDoc } from '../models/index.js';
+import { buildPlanner } from '../services/planner.js';
 
 const PreferencesBody = z
   .object({
@@ -48,6 +49,10 @@ export function meRouter(): Router {
       await User.updateOne({ _id: user._id }, { $set: { lastLoginAt: new Date() } });
     }
     res.json(await toMe(user));
+  });
+
+  router.get('/planner', async (_req, res) => {
+    res.json(await buildPlanner(me(res)));
   });
 
   router.patch('/preferences', async (req, res) => {

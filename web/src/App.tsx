@@ -5,6 +5,7 @@ import { Layout } from './components/Layout';
 import { Discover } from './pages/Discover';
 import { EventPage } from './pages/EventPage';
 import { Home } from './pages/Home';
+import { Planner } from './pages/Planner';
 import { ToastProvider } from './ToastProvider';
 
 const queryClient = new QueryClient({
@@ -58,6 +59,7 @@ const router = createBrowserRouter([
       { path: '/', element: <Home /> },
       { path: '/discover', element: <Discover /> },
       { path: '/events/:id', element: <EventPage /> },
+      { path: '/planner', element: <Planner /> },
       { path: '*', element: <NotFound /> }
     ]
   }

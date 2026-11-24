@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import { Types } from 'mongoose';
 import { z } from 'zod';
-import { CATEGORIES, SOURCE_KINDS, type AttendeesDTO, type Page, type EventSummaryDTO } from '@illi-knows/shared';
-import { currentUser } from '../auth/middleware.js';
-import { HttpError, notFound } from '../lib/errors.js';
+import { CATEGORIES, FOUND_VIA, REMINDERS, SOURCE_KINDS, type AttendeesDTO, type EventDetailDTO, type EventSummaryDTO, type Page } from '@illi-knows/shared';
+import { currentUser, requireUser } from '../auth/middleware.js';
+import { HttpError, notFound, unauthorized } from '../lib/errors.js';
+import { toIcs } from '../lib/ics.js';
 import { toEventDetail, toEventSummary, toViewer, type LeanEvent, type LeanRsvp } from '../lib/serialize.js';
 import { objectId, parse } from '../lib/validate.js';
 import { Event, Organization, Place, Rsvp, type UserDoc } from '../models/index.js';
+import { updateRsvp } from '../services/rsvps.js';
 import { initials } from '../services/users.js';
 
 const ListQuery = z.object({
@@ -20,6 +22,16 @@ const ListQuery = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
   cursor: z.string().max(200).optional()
 });
+
+const RsvpBody = z
+  .object({
+    going: z.boolean().optional(),
+    anonymous: z.boolean().optional(),
+    inCalendar: z.boolean().optional(),
+    reminder: z.enum(REMINDERS).optional(),
+    foundVia: z.enum(FOUND_VIA).optional()
+  })
+  .strict();
 
 const AttendeesQuery = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(12)
@@ -58,7 +70,13 @@ async function loadVisible(id: Types.ObjectId, user: UserDoc | undefined): Promi
   return e;
 }
 
-export function eventsRouter(): Router {
+async function detailFor(id: Types.ObjectId, user: UserDoc | undefined): Promise<EventDetailDTO> {
+  const e = await loadVisible(id, user);
+  const rsvp = user ? await Rsvp.findOne({ user: user._id, event: id }).lean<LeanRsvp>() : null;
+  return toEventDetail(e, toViewer(rsvp));
+}
+
+export function eventsRouter({ webUrl }: { webUrl: string }): Router {
   const router = Router();
 
   router.get('/', async (req, res) => {
@@ -108,6 +126,41 @@ export function eventsRouter(): Router {
     if (e.status === 'published') await Event.updateOne({ _id: id }, { $inc: { 'stats.viewCount': 1 } });
     const rsvp = user ? await Rsvp.findOne({ user: user._id, event: id }).lean<LeanRsvp>() : null;
     res.json(toEventDetail(e, toViewer(rsvp)));
+  });
+
+  router.put('/:id/rsvp', requireUser, async (req, res) => {
+    const id = parse(objectId, req.params.id);
+    const user = currentUser(res);
+    if (!user) throw unauthorized();
+    await updateRsvp(user, id, parse(RsvpBody, req.body ?? {}));
+    res.json(await detailFor(id, user));
+  });
+
+  router.delete('/:id/rsvp', requireUser, async (req, res) => {
+    const id = parse(objectId, req.params.id);
+    const user = currentUser(res);
+    if (!user) throw unauthorized();
+    await updateRsvp(user, id, { going: false });
+    res.json(await detailFor(id, user));
+  });
+
+  router.get('/:id/ics', async (req, res) => {
+    const id = parse(objectId, req.params.id);
+    const e = await loadVisible(id, currentUser(res));
+    const place = e.location?.place && 'name' in e.location.place ? e.location.place.name : '';
+    const body = toIcs({
+      id: String(e._id),
+      title: e.title,
+      description: e.description ?? '',
+      location: e.location?.text || place,
+      startsAt: e.startsAt,
+      endsAt: e.endsAt,
+      url: `${webUrl.replace(/\/$/, '')}/events/${String(e._id)}`
+    });
+    const filename = e.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'event';
+    res.set('Content-Type', 'text/calendar; charset=utf-8');
+    res.set('Content-Disposition', `attachment; filename="${filename}.ics"`);
+    res.send(body);
   });
 
   router.get('/:id/attendees', async (req, res) => {

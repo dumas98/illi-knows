@@ -17,7 +17,8 @@ const ConfigSchema = z.object({
   ALLOWED_EMAIL_DOMAIN: z.string().default('illinois.edu'),
   REQUIRE_VERIFIED_EMAIL: z.stringbool().default(true),
   INGEST_API_KEY: z.string().min(16).optional(),
-  DEMO_MODE: z.stringbool().default(false)
+  DEMO_MODE: z.stringbool().default(false),
+  PUBLIC_WEB_URL: z.url().default('https://illi-knows.web.app')
 });
 
 export type Config = z.infer<typeof ConfigSchema>;

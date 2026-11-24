@@ -13,7 +13,7 @@ import { meRouter } from './routes/me.js';
 import { placesRouter } from './routes/places.js';
 
 export interface AppDeps {
-  config: Pick<Config, 'CORS_ORIGINS' | 'ALLOWED_EMAIL_DOMAIN' | 'REQUIRE_VERIFIED_EMAIL' | 'DEMO_MODE'>;
+  config: Pick<Config, 'CORS_ORIGINS' | 'ALLOWED_EMAIL_DOMAIN' | 'REQUIRE_VERIFIED_EMAIL' | 'DEMO_MODE' | 'PUBLIC_WEB_URL'>;
   verifyToken: TokenVerifier;
   logRequests?: boolean;
 }
@@ -51,7 +51,7 @@ export function createApp({ config, verifyToken, logRequests = false }: AppDeps)
       requireVerifiedEmail: config.REQUIRE_VERIFIED_EMAIL
     })
   );
-  app.use('/api/events', eventsRouter());
+  app.use('/api/events', eventsRouter({ webUrl: config.PUBLIC_WEB_URL }));
   app.use('/api/places', placesRouter());
   app.use('/api/me', meRouter());
 

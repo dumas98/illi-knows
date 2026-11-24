@@ -1,10 +1,11 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { SOURCE_LABELS } from '@illi-knows/shared';
+import { REMINDER_LABELS, REMINDERS, SOURCE_LABELS, type EventDetailDTO, type Reminder } from '@illi-knows/shared';
 import { useAuth } from '../auth/context';
 import { CampusMap } from '../components/CampusMap';
-import { ApiError } from '../lib/api';
+import { API_URL, ApiError } from '../lib/api';
 import { catClass, fmtLongDay, fmtMonth, fmtDayNum, fmtPrice, fmtTime, initials } from '../lib/format';
-import { useEvent, usePlaces } from '../queries';
+import { useAttendees, useEvent, usePlaces, useRsvp } from '../queries';
 import { useToast } from '../toast-context';
 
 const ICONS = {
@@ -28,11 +29,179 @@ const ICONS = {
   )
 };
 
+const ANON_HINT = 'Anonymous RSVPs count toward the total, but your name stays off the attendee list. The host only sees a number.';
+
+function Attendees({ event }: { event: EventDetailDTO }) {
+  const attendees = useAttendees(event.id);
+  const { me } = useAuth();
+  const shown = attendees.data?.shown ?? [];
+  const more = Math.max(0, event.goingCount - shown.length);
+  return (
+    <section style={{ gap: 12 }}>
+      <h2>Attendees ({event.goingCount})</h2>
+      {event.goingCount === 0 ? (
+        <p className="muted">Nobody has RSVPed yet. Be the first.</p>
+      ) : (
+        <div className="row" style={{ gap: 0 }}>
+          <span className="faces big">
+            {shown.map((a, i) => (
+              <span key={a.id} className={`face f${i % 5}`} title={a.name}>
+                {a.initials}
+              </span>
+            ))}
+          </span>
+          {more > 0 && <span className="more">{shown.length ? `and ${more} more` : `${more} going`}</span>}
+        </div>
+      )}
+      {event.viewer?.going && (
+        <p className="small muted">
+          {event.viewer.anonymous ? "You're counted anonymously. Other people and the host only see a number." : `You're on this list as ${me?.name ?? 'yourself'}.`}
+        </p>
+      )}
+    </section>
+  );
+}
+
+export function RsvpPanel({ event }: { event: EventDetailDTO }) {
+  const { status, requireSignIn } = useAuth();
+  const toast = useToast();
+  const { update, cancel } = useRsvp(event.id);
+  const signedIn = status === 'signed-in';
+  const viewer = event.viewer;
+  const going = viewer?.going ?? false;
+  const [loadedAt] = useState(() => Date.now());
+  const ended = Date.parse(event.endsAt) < loadedAt;
+  const busy = update.isPending || cancel.isPending;
+  const icsUrl = `${API_URL}/api/events/${event.id}/ics`;
+
+  const fail = (err: unknown) => toast(err instanceof Error ? err.message : 'Something went wrong. Try again.');
+
+  const rsvp = (anonymous: boolean) => {
+    const run = () =>
+      update.mutate(
+        { going: true, anonymous, foundVia: 'other' },
+        {
+          onSuccess: () =>
+            toast(anonymous ? `You're going to ${event.title} anonymously` : `You're going to ${event.title}`, {
+              label: 'Undo',
+              onClick: () => cancel.mutate(undefined, { onError: fail })
+            }),
+          onError: fail
+        }
+      );
+    if (signedIn) run();
+    else requireSignIn(anonymous ? 'Sign in to RSVP anonymously' : 'Sign in to RSVP', run);
+  };
+
+  const cancelRsvp = () => {
+    const wasAnonymous = viewer?.anonymous ?? false;
+    cancel.mutate(undefined, {
+      onSuccess: () =>
+        toast('RSVP cancelled', {
+          label: 'Undo',
+          onClick: () => update.mutate({ going: true, anonymous: wasAnonymous }, { onError: fail })
+        }),
+      onError: fail
+    });
+  };
+
+  const addToCalendar = () => {
+    const run = () => {
+      window.location.href = icsUrl;
+      update.mutate({ inCalendar: true }, { onSuccess: () => toast('Calendar file downloaded'), onError: fail });
+    };
+    if (signedIn) run();
+    else requireSignIn('Sign in to save it to your calendar', run);
+  };
+
+  if (ended) {
+    return (
+      <>
+        <p className="count-big">{event.goingCount} went</p>
+        <p className="hint">This event has ended.</p>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <p className="count-big">
+        {event.goingCount} going
+        {going && (
+          <>
+            {' · '}
+            <span className="going">{viewer?.anonymous ? 'Going anonymously' : "You're going"}</span>
+          </>
+        )}
+      </p>
+      {going ? (
+        <>
+          <button className="btn" type="button" disabled={busy} onClick={cancelRsvp}>
+            Cancel RSVP
+          </button>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={viewer?.anonymous ?? false}
+              disabled={busy}
+              onChange={e => {
+                const anonymous = e.target.checked;
+                update.mutate(
+                  { anonymous },
+                  { onSuccess: () => toast(anonymous ? 'Your RSVP is now anonymous' : 'Your name now shows on the attendee list'), onError: fail }
+                );
+              }}
+            />
+            Keep my RSVP anonymous
+          </label>
+        </>
+      ) : (
+        <>
+          <button className="btn btn-primary" type="button" disabled={busy} onClick={() => rsvp(false)}>
+            RSVP
+          </button>
+          <button className="btn" type="button" disabled={busy} onClick={() => rsvp(true)}>
+            RSVP anonymously
+          </button>
+          <p className="hint">{ANON_HINT}</p>
+        </>
+      )}
+      <button className="btn" type="button" disabled={busy} onClick={addToCalendar}>
+        {viewer?.inCalendar ? 'Download calendar file again' : 'Add to calendar'}
+      </button>
+      {signedIn ? (
+        <div className="field">
+          <label htmlFor="remind">Remind me</label>
+          <select
+            id="remind"
+            value={viewer?.reminder ?? 'none'}
+            disabled={busy}
+            onChange={e => {
+              const reminder = e.target.value as Reminder;
+              update.mutate(
+                { reminder },
+                { onSuccess: () => toast(reminder === 'none' ? 'Reminder removed' : `We'll email you ${REMINDER_LABELS[reminder].toLowerCase()}`), onError: fail }
+              );
+            }}
+          >
+            {REMINDERS.map(r => (
+              <option key={r} value={r}>
+                {REMINDER_LABELS[r]}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : (
+        <p className="hint">Anyone can browse. Sign in to RSVP, save it to your calendar, or get a reminder.</p>
+      )}
+    </>
+  );
+}
+
 export function EventPage() {
   const { id } = useParams();
   const event = useEvent(id);
   const places = usePlaces();
-  const { requireSignIn } = useAuth();
   const toast = useToast();
 
   if (event.isPending) return <div className="skeleton">Loading event…</div>;
@@ -50,8 +219,11 @@ export function EventPage() {
   }
 
   const e = event.data;
-  const going = e.viewer?.going ?? false;
-  const notYet = () => toast('RSVPs go live in the next update.');
+  const copyLink = () => {
+    const done = () => toast('Link copied');
+    if (navigator.clipboard) navigator.clipboard.writeText(window.location.href).then(done, done);
+    else done();
+  };
 
   return (
     <>
@@ -62,7 +234,7 @@ export function EventPage() {
         </p>
         <h1>{e.title}</h1>
         <div className="row" style={{ gap: 12 }}>
-          <span className="avatar" style={{ background: 'var(--blue)', color: '#fff', borderRadius: 12, width: 44, height: 44 }} aria-hidden="true">
+          <span className="hostav" aria-hidden="true">
             {initials(e.host.name)}
           </span>
           <span>
@@ -88,6 +260,7 @@ export function EventPage() {
             <h2>Details</h2>
             <p>{e.description || 'The host has not added a description yet.'}</p>
           </section>
+          <Attendees event={e} />
           <section style={{ gap: 12 }}>
             <h2>Where it is</h2>
             {e.place ? (
@@ -125,22 +298,10 @@ export function EventPage() {
             </span>
           </div>
           <hr className="divider" />
-          <p className="count-big">
-            {e.goingCount} going
-            {going && (
-              <>
-                {' · '}
-                <span className="going">{e.viewer?.anonymous ? 'Going anonymously' : "You're going"}</span>
-              </>
-            )}
-          </p>
-          <button className="btn btn-primary" type="button" onClick={() => requireSignIn('Sign in to RSVP', notYet)}>
-            RSVP
+          <RsvpPanel event={e} />
+          <button className="btn" type="button" onClick={copyLink}>
+            Copy link
           </button>
-          <button className="btn" type="button" onClick={() => requireSignIn('Sign in to RSVP anonymously', notYet)}>
-            RSVP anonymously
-          </button>
-          <p className="hint">Anonymous RSVPs count toward the total, but your name stays off the attendee list. The host only sees a number.</p>
         </aside>
       </div>
     </>

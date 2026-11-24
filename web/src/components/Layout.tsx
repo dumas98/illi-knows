@@ -3,9 +3,12 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/context';
 import { SignInDialog } from '../auth/SignInDialog';
 import { initials } from '../lib/format';
+import { usePlanner } from '../queries';
 
 function Header() {
   const { status, me, openSignIn, signOut } = useAuth();
+  const planner = usePlanner();
+  const upcoming = planner.data?.stats.upcoming ?? 0;
   const navigate = useNavigate();
   const [q, setQ] = useState('');
 
@@ -60,6 +63,16 @@ function Header() {
             Home
           </NavLink>
           <NavLink to="/discover">Discover</NavLink>
+          {status === 'signed-in' && (
+            <NavLink to="/planner">
+              My planner
+              {upcoming > 0 && (
+                <span className="nbadge" aria-label={`${upcoming} upcoming RSVPs`}>
+                  {upcoming}
+                </span>
+              )}
+            </NavLink>
+          )}
         </nav>
       </div>
     </header>

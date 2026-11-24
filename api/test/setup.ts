@@ -18,7 +18,7 @@ export const fakeVerifier: TokenVerifier = async token => {
 
 export function testApp() {
   return createApp({
-    config: { CORS_ORIGINS: ['http://localhost:5173'], ALLOWED_EMAIL_DOMAIN: 'illinois.edu', REQUIRE_VERIFIED_EMAIL: true, DEMO_MODE: false },
+    config: { CORS_ORIGINS: ['http://localhost:5173'], ALLOWED_EMAIL_DOMAIN: 'illinois.edu', REQUIRE_VERIFIED_EMAIL: true, DEMO_MODE: false, PUBLIC_WEB_URL: 'https://illi-knows.web.app' },
     verifyToken: fakeVerifier
   });
 }

@@ -33,6 +33,7 @@ interface Props {
   showPopup?: boolean;
   aspect?: number;
   minWidth?: number;
+  route?: boolean;
 }
 
 const MIN_W = 50;
@@ -69,7 +70,7 @@ function fitView(points: Point[], aspect: number, minWidth: number): View {
 
 const ringPath = (ring: [number, number][]) => 'M' + ring.map(p => project(p).map(n => n.toFixed(1)).join(' ')).join('L') + 'Z';
 
-export function CampusMap({ places, events, selectedId = null, highlightId = null, onSelect, showPopup = true, aspect = 4 / 3, minWidth = 180 }: Props) {
+export function CampusMap({ places, events, selectedId = null, highlightId = null, onSelect, showPopup = true, aspect = 4 / 3, minWidth = 180, route = false }: Props) {
   const basemap = useBasemap();
   const box = useRef<HTMLDivElement>(null);
   const [pxWidth, setPxWidth] = useState(600);
@@ -247,7 +248,7 @@ export function CampusMap({ places, events, selectedId = null, highlightId = nul
         onPointerCancel={onPointerUp}
       >
         <rect className="m-ground" x={-MAP_WIDTH} y={-MAP_HEIGHT} width={MAP_WIDTH * 3} height={MAP_HEIGHT * 3} />
-        {basemap.data && (
+        {basemap.data?.layers && (
           <g aria-hidden="true">
             <path className="m-green" d={basemap.data.layers.green} />
             <path className="m-field" d={basemap.data.layers.fields} />
@@ -278,6 +279,13 @@ export function CampusMap({ places, events, selectedId = null, highlightId = nul
             );
           })}
         </g>
+        {route && markers.length > 1 && (
+          <polyline
+            className="m-route"
+            points={[...markers].sort((a, b) => a.n - b.n).map(m => `${m.anchor[0]},${m.anchor[1] - 20 * upp}`).join(' ')}
+            style={{ strokeWidth: 3 * upp, strokeDasharray: `${7 * upp} ${7 * upp}` }}
+          />
+        )}
         {clusters.map(c => {
           const x = view.x + c.sx * upp;
           const y = view.y + c.sy * upp;

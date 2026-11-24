@@ -1,4 +1,4 @@
-import type { Category, EventStatus, PlaceKind, Reminder, Role, SourceKind } from './constants.js';
+import type { Category, EventStatus, FoundVia, PlaceKind, Reminder, Role, SourceKind } from './constants.js';
 
 export interface ApiErrorBody {
   error: { code: string; message: string; details?: unknown };
@@ -83,4 +83,21 @@ export interface EventsQuery {
   place?: string;
   limit?: number;
   cursor?: string;
+}
+
+export interface RsvpUpdate {
+  going?: boolean;
+  anonymous?: boolean;
+  inCalendar?: boolean;
+  reminder?: Reminder;
+  foundVia?: FoundVia;
+}
+
+export interface PlannerDTO {
+  semester: string;
+  upcoming: EventSummaryDTO[];
+  stats: { upcoming: number; attendedThisSemester: number; remindersSet: number; inCalendar: number };
+  attendedByMonth: { label: string; value: number }[];
+  attendedByCategory: { label: Category; value: number }[];
+  suggestions: EventSummaryDTO[];
 }
