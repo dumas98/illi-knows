@@ -12,7 +12,8 @@
     "db:indexes": "tsx src/scripts/sync-indexes.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "grant-role": "tsx src/scripts/grant-role.ts"
+    "grant-role": "tsx src/scripts/grant-role.ts",
+    "campus:import": "tsx src/scripts/import-campus.ts"
   },
   "dependencies": {
     "@illi-knows/shared": "*",

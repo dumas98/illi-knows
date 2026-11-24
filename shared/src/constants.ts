@@ -1,6 +1,5 @@
 export const CAMPUS_TIMEZONE = 'America/Chicago';
 export const CAMPUS_EMAIL_DOMAIN = 'illinois.edu';
-export const MAP_SIZE = { width: 800, height: 520 } as const;
 
 export const ROLES = ['student', 'organizer', 'admin'] as const;
 export type Role = (typeof ROLES)[number];
@@ -41,7 +40,7 @@ export type FlagCode = (typeof FLAG_CODES)[number];
 export const FOUND_VIA = ['instagram', 'event_board', 'friends', 'search', 'map', 'other'] as const;
 export type FoundVia = (typeof FOUND_VIA)[number];
 
-export const PLACE_KINDS = ['building', 'quad', 'field'] as const;
+export const PLACE_KINDS = ['building', 'residence', 'library', 'venue', 'recreation', 'quad', 'green', 'field'] as const;
 export type PlaceKind = (typeof PLACE_KINDS)[number];
 
 export const ORG_KINDS = ['club', 'department', 'office', 'other'] as const;

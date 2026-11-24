@@ -147,22 +147,41 @@ input:focus { border-color: var(--blue); outline: 0; box-shadow: 0 0 0 3px var(-
 .cattile:hover strong { text-decoration: underline; text-decoration-color: var(--orange); }
 .cattile span span { font-size: 14px; color: var(--storm); }
 
-.cmap { position: relative; background: var(--blue); border-radius: 14px; }
-.cmap svg { display: block; width: 100%; height: auto; border-radius: 14px; }
+.cmap { position: relative; background: var(--blue); border-radius: 14px; overflow: hidden; touch-action: none; user-select: none; }
+.cmap svg { display: block; width: 100%; height: 100%; cursor: grab; }
+.cmap svg:active { cursor: grabbing; }
 .m-ground { fill: #13294b; }
-.m-street { stroke: #707372; stroke-width: 12; fill: none; }
-.m-quad, .m-field { fill: #006230; }
-.m-walk { stroke: #c6c7c6; stroke-width: 4; fill: none; }
-.m-bld { fill: #ffffff; }
-.m-track { fill: none; stroke: #ffffff; stroke-width: 3; }
-.m-label { font-family: var(--body); font-size: 15px; font-weight: 700; fill: #707372; }
-.m-label.on-dark { fill: #ffffff; }
+.m-green { fill: #006230; }
+.m-field { fill: #006230; stroke: #c6c7c6; stroke-width: 0.6; }
+.m-water { fill: #009fd4; }
+.m-waterway { fill: none; stroke: #009fd4; stroke-width: 2.5; stroke-linecap: round; }
+.m-path { fill: none; stroke: #8e9090; stroke-width: 0.9; stroke-linecap: round; stroke-linejoin: round; }
+.m-minor { fill: none; stroke: #8e9090; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.m-major { fill: none; stroke: #c6c7c6; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.m-bld { fill: #707372; }
+.m-place { fill: #c6c7c6; }
+.m-venue { fill: #ffffff; stroke: var(--orange); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.m-label { font-family: var(--body); font-weight: 700; fill: #ffffff; stroke: #13294b; paint-order: stroke; stroke-linejoin: round; pointer-events: none; }
+.m-label-venue { fill: #ffffff; }
+.cluster { cursor: pointer; outline: none; }
+.cluster circle { fill: var(--blue); stroke: var(--orange); stroke-width: 3; }
+.cluster text { font-family: var(--body); font-size: 14px; font-weight: 800; fill: #ffffff; pointer-events: none; }
+.cluster:hover circle, .cluster.hl circle, .cluster:focus-visible circle { fill: var(--orange); stroke: var(--blue); }
+.cluster:hover text, .cluster.hl text, .cluster:focus-visible text { fill: var(--blue); }
+.map-tools { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.map-tools button { width: 34px; height: 34px; border-radius: 8px; border: 0; background: var(--white); color: var(--blue); font-size: 20px; font-weight: 700; line-height: 1; cursor: pointer; box-shadow: 0 2px 8px rgba(19, 41, 75, 0.35); }
+.map-tools button:hover { background: var(--orange); }
+.map-hint { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: var(--blue); color: var(--white); border: 1px solid var(--storm); border-radius: 10px; padding: 8px 14px; font-size: 14px; font-weight: 600; pointer-events: none; }
+.map-credit { position: absolute; left: 8px; bottom: 6px; font-size: 11px; color: var(--storm-80); text-decoration: none; background: var(--blue); padding: 1px 6px; border-radius: 4px; }
+.map-credit:hover { color: var(--white); text-decoration: underline; }
 .pin { cursor: pointer; outline: none; }
 .pin path { fill: var(--orange); stroke: var(--blue); stroke-width: 2; }
 .pin text { font-family: var(--body); font-size: 12px; font-weight: 800; fill: var(--blue); pointer-events: none; }
 .pin:hover path, .pin.hl path, .pin.on path, .pin:focus-visible path { fill: var(--blue); stroke: var(--orange); stroke-width: 2.5; }
 .pin:hover text, .pin.hl text, .pin.on text, .pin:focus-visible text { fill: #ffffff; }
-.mpop { position: absolute; transform: translate(-50%, -100%); background: var(--white); border-top: 4px solid var(--orange); border-radius: 12px; padding: 12px 30px 12px 14px; width: min(250px, 70%); box-shadow: 0 8px 24px rgba(19, 41, 75, 0.35); z-index: 3; display: flex; flex-direction: column; gap: 3px; color: var(--blue); }
+.mpop { position: absolute; transform: translate(-50%, -100%); background: var(--white); border-top: 4px solid var(--orange); border-radius: 12px; padding: 12px 30px 12px 14px; width: min(250px, 80%); max-height: 70%; overflow: auto; box-shadow: 0 8px 24px rgba(19, 41, 75, 0.35); z-index: 3; display: flex; flex-direction: column; gap: 10px; color: var(--blue); }
+.mpop-item { display: flex; flex-direction: column; gap: 2px; }
+.mpop-item + .mpop-item { border-top: 1px solid var(--line); padding-top: 8px; }
 .mpop.below { transform: translate(-50%, 8px); }
 .mpop-x { position: absolute; right: 4px; top: 4px; border: 0; background: none; font-size: 22px; line-height: 1; cursor: pointer; color: var(--storm); padding: 2px 8px; }
 .mpop-x:hover { color: var(--blue); }

@@ -48,7 +48,8 @@ export interface LeanPlace {
   key: string;
   name: string;
   kind?: string | null;
-  map: { x: number; y: number; w: number; h: number };
+  geo: { coordinates: number[] };
+  outline?: { coordinates?: number[][][] } | null;
 }
 
 function isPlaceRef(p: unknown): p is LeanPlaceRef {
@@ -104,6 +105,7 @@ export function toPlace(p: LeanPlace): PlaceDTO {
     key: p.key,
     name: p.name,
     kind: (p.kind ?? 'building') as PlaceKind,
-    map: { x: p.map.x, y: p.map.y, w: p.map.w, h: p.map.h }
+    center: [p.geo.coordinates[0] ?? 0, p.geo.coordinates[1] ?? 0],
+    outline: p.outline?.coordinates?.[0]?.map(([lon, lat]) => [lon ?? 0, lat ?? 0] as [number, number]) ?? null
   };
 }

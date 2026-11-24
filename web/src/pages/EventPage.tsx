@@ -92,7 +92,7 @@ export function EventPage() {
             <h2>Where it is</h2>
             {e.place ? (
               <>
-                <CampusMap places={places.data ?? []} events={[e]} showPopup={false} />
+                <CampusMap places={places.data ?? []} events={[e]} showPopup={false} aspect={16 / 9} minWidth={130} />
                 <p className="maphint">{e.locationText}</p>
               </>
             ) : (

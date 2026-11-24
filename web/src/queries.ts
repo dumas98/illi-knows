@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { EventDetailDTO, EventSummaryDTO, EventsQuery, Page, PlaceDTO } from '@illi-knows/shared';
+import type { CampusBasemap, EventDetailDTO, EventSummaryDTO, EventsQuery, Page, PlaceDTO } from '@illi-knows/shared';
 import { useAuth } from './auth/context';
 import { api, query } from './lib/api';
 
@@ -27,5 +27,17 @@ export function useEvent(id: string | undefined) {
     queryFn: ({ signal }) => api<EventDetailDTO>(`/api/events/${id}`, { signal }),
     enabled: !!id,
     retry: (count, err) => (err as { status?: number }).status !== 404 && count < 2
+  });
+}
+
+export function useBasemap() {
+  return useQuery({
+    queryKey: ['basemap'],
+    queryFn: async ({ signal }) => {
+      const res = await fetch('/map/campus-basemap.json', { signal });
+      if (!res.ok) throw new Error('Could not load the campus map.');
+      return (await res.json()) as CampusBasemap;
+    },
+    staleTime: Infinity
   });
 }

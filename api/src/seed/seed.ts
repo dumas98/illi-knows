@@ -3,7 +3,7 @@ import { Types } from 'mongoose';
 import { REMINDER_MINUTES, type FoundVia, type Reminder } from '@illi-knows/shared';
 import { addDays, campusDay, campusTime, weekday } from '../lib/time.js';
 import { ALL_MODELS, Event, Organization, Place, Rsvp, Source, User } from '../models/index.js';
-import { FAKE_EMAIL_DOMAIN, ORGS, PLACES, REVIEW_QUEUE, TEMPLATES, type EventTemplate } from './data.js';
+import { FAKE_EMAIL_DOMAIN, ORGS, REVIEW_QUEUE, TEMPLATES, loadCampusPlaces, type EventTemplate } from './data.js';
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -41,17 +41,19 @@ const CAMPUS_RADIO: (Omit<EventTemplate, 'key' | 'org' | 'source' | 'popularity'
   popularity?: [number, number];
   note?: string;
 })[] = [
-  { title: 'Battle of the bands', category: 'Music', place: 'union', detail: 'Ballroom', hour: 19, minute: 30, minutes: 180, priceCents: 800, offset: 10, status: 'published', popularity: [120, 150], description: 'Six student bands, twenty minutes each, and the crowd picks the winner. Doors open at 7:00 pm.' },
-  { title: 'Vinyl swap meet', category: 'Music', place: 'union', detail: 'Lobby', hour: 12, minutes: 180, offset: 10, status: 'in_review', description: 'Bring records to trade or sell. Tables are free; first come, first served.' },
-  { title: 'Songwriting workshop', category: 'Music', place: 'music', detail: 'Room 12', hour: 17, minutes: 90, offset: 15, status: 'draft', description: 'Write a verse and chorus in ninety minutes with two student songwriters.' },
+  { title: 'Battle of the bands', category: 'Music', place: 'illini-union', detail: 'Ballroom', hour: 19, minute: 30, minutes: 180, priceCents: 800, offset: 10, status: 'published', popularity: [120, 150], description: 'Six student bands, twenty minutes each, and the crowd picks the winner. Doors open at 7:00 pm.' },
+  { title: 'Vinyl swap meet', category: 'Music', place: 'illini-union', detail: 'Lobby', hour: 12, minutes: 180, offset: 10, status: 'in_review', description: 'Bring records to trade or sell. Tables are free; first come, first served.' },
+  { title: 'Songwriting workshop', category: 'Music', place: 'smith-memorial-hall', detail: 'Room 12', hour: 17, minutes: 90, offset: 15, status: 'draft', description: 'Write a verse and chorus in ninety minutes with two student songwriters.' },
   { title: 'Karaoke night', category: 'Music', place: null, hour: 20, minutes: 150, offset: 17, status: 'changes_requested', note: 'Add a location', description: 'Campus Radio hosts its end-of-semester karaoke night.' },
-  { title: 'Fall showcase', category: 'Music', place: 'theater', hour: 19, minutes: 150, offset: -25, status: 'published', popularity: [120, 140], description: 'Every Campus Radio show performs one live segment.' },
-  { title: 'Trivia night', category: 'Music', place: 'library', hour: 20, minutes: 120, offset: -40, status: 'published', popularity: [60, 80], description: 'Music trivia in five rounds. Teams of up to four.' },
-  { title: 'Welcome concert', category: 'Music', place: 'quad', hour: 18, minutes: 180, offset: -55, status: 'published', popularity: [140, 150], description: 'Three bands kick off the semester on the main quad.' }
+  { title: 'Fall showcase', category: 'Music', place: 'krannert-center-for-the-performing-arts', hour: 19, minutes: 150, offset: -25, status: 'published', popularity: [120, 140], description: 'Every Campus Radio show performs one live segment.' },
+  { title: 'Trivia night', category: 'Music', place: 'funk-library', hour: 20, minutes: 120, offset: -40, status: 'published', popularity: [60, 80], description: 'Music trivia in five rounds. Teams of up to four.' },
+  { title: 'Welcome concert', category: 'Music', place: 'main-quad', hour: 18, minutes: 180, offset: -55, status: 'published', popularity: [140, 150], description: 'Three bands kick off the semester on the main quad.' }
 ];
 
+const titleFromKey = (key: string) => key.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
 function locationText(placeName: string | undefined, detail: string | undefined): string {
-  if (!placeName) return '';
+  if (!placeName) return detail ?? '';
   return detail ? `${placeName}, ${detail.toLowerCase()}` : placeName;
 }
 
@@ -65,8 +67,22 @@ export async function seedDatabase(opts: SeedOptions = {}): Promise<SeedResult> 
   for (const model of ALL_MODELS) await model.collection.deleteMany({});
   for (const model of ALL_MODELS) await model.syncIndexes();
 
-  const places = await Place.insertMany(PLACES);
+  const places = await Place.insertMany(
+    loadCampusPlaces().map(p => ({
+      key: p.key,
+      name: p.name,
+      kind: p.kind,
+      osmId: p.osmId,
+      facilityNumber: p.facilityNumber,
+      aliases: p.aliases,
+      geo: { type: 'Point', coordinates: p.center },
+      outline: { type: 'Polygon', coordinates: [[...p.outline, p.outline[0]!]] }
+    }))
+  );
   const placeByKey = new Map(places.map(p => [p.key, p]));
+  const wanted = [...TEMPLATES.map(t => t.place), ...CAMPUS_RADIO.map(r => r.place), ...REVIEW_QUEUE.map(q => q.place)];
+  const missing = [...new Set(wanted.filter((k): k is string => !!k && !placeByKey.has(k)))];
+  if (missing.length) console.warn(`Seed venues not found on the campus map, so their events won't be pinned: ${missing.join(', ')}`);
 
   const personas = [
     { name: 'Denise Ruiz', email: `denise.ruiz@${FAKE_EMAIL_DOMAIN}`, roles: ['student'] },
@@ -140,7 +156,7 @@ export async function seedDatabase(opts: SeedOptions = {}): Promise<SeedResult> 
       category: t.category,
       startsAt,
       endsAt: new Date(startsAt.getTime() + t.minutes * MINUTE),
-      location: { place: place?._id, detail: t.detail, text: locationText(place?.name, t.detail) },
+      location: { place: place?._id, detail: t.detail, text: locationText(place?.name ?? (t.place ? titleFromKey(t.place) : undefined), t.detail) },
       host: { organization: org?._id, name: org?.name ?? 'Unknown host' },
       price: t.priceCents ? { isFree: false, amountCents: t.priceCents, note: 'Pay at the door' } : { isFree: true },
       source: { kind: t.source, feed: feedFor(t.source, handle), handle },
@@ -197,7 +213,7 @@ export async function seedDatabase(opts: SeedOptions = {}): Promise<SeedResult> 
       category: r.category,
       startsAt,
       endsAt: new Date(startsAt.getTime() + r.minutes * MINUTE),
-      location: { place: place?._id, detail: r.detail, text: locationText(place?.name, r.detail) },
+      location: { place: place?._id, detail: r.detail, text: locationText(place?.name ?? (r.place ? titleFromKey(r.place) : undefined), r.detail) },
       host: { organization: radio?._id, name: radio?.name ?? 'Campus Radio' },
       createdBy: tim._id,
       price: r.priceCents ? { isFree: false, amountCents: r.priceCents, note: 'Pay at the door' } : { isFree: true },

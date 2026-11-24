@@ -21,7 +21,7 @@ afterAll(async () => {
 
 describe('seed', () => {
   it('builds a usable semester', async () => {
-    expect(seeded.places).toBe(13);
+    expect(seeded.places).toBeGreaterThan(50);
     expect(seeded.reviewQueue).toBeGreaterThanOrEqual(6);
     expect(seeded.thisWeek).toBeGreaterThan(3);
     expect(seeded.rsvps).toBeGreaterThan(100);
@@ -76,9 +76,9 @@ describe('GET /api/events', () => {
     const ig = (await request(app).get('/api/events?source=instagram&limit=100')).body as Page<EventSummaryDTO>;
     expect(ig.items.every(e => e.source.kind === 'instagram')).toBe(true);
 
-    const quad = (await request(app).get('/api/events?place=quad&limit=100')).body as Page<EventSummaryDTO>;
+    const quad = (await request(app).get('/api/events?place=main-quad&limit=100')).body as Page<EventSummaryDTO>;
     expect(quad.items.length).toBeGreaterThan(0);
-    expect(quad.items.every(e => e.place?.key === 'quad')).toBe(true);
+    expect(quad.items.every(e => e.place?.key === 'main-quad')).toBe(true);
 
     const nowhere = (await request(app).get('/api/events?place=moon')).body as Page<EventSummaryDTO>;
     expect(nowhere.items).toEqual([]);
@@ -147,7 +147,12 @@ describe('GET /api/places', () => {
   it('lists every map place', async () => {
     const res = await request(app).get('/api/places');
     expect(res.status).toBe(200);
-    expect((res.body as PlaceDTO[]).map(p => p.key)).toContain('union');
+    const places = res.body as PlaceDTO[];
+    const union = places.find(p => p.key === 'illini-union');
+    expect(union).toBeDefined();
+    expect(union!.center[0]).toBeCloseTo(-88.227, 2);
+    expect(union!.center[1]).toBeCloseTo(40.109, 2);
+    expect(union!.outline!.length).toBeGreaterThan(3);
   });
 });
 

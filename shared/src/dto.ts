@@ -14,7 +14,8 @@ export interface PlaceDTO {
   key: string;
   name: string;
   kind: PlaceKind;
-  map: { x: number; y: number; w: number; h: number };
+  center: [number, number];
+  outline: [number, number][] | null;
 }
 
 export interface PlaceRefDTO {

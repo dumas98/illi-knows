@@ -58,18 +58,21 @@ Guests have no document. Browsing never writes to the database except the event 
 
 ## places
 
-The custom campus map draws these. Each place stores its rectangle on the 800 × 520 SVG.
+Real campus buildings and open spaces, imported from OpenStreetMap by `npm run campus:import -w @illi-knows/api`. The same script writes the base map the website draws (`web/public/map/campus-basemap.json`: streets, paths, water, green space, and every building outline). The map shows "© OpenStreetMap contributors", which the OpenStreetMap license requires.
 
 | Field | Type | Notes |
 |---|---|---|
-| `key` | String, unique | `union`, `quad`, `rec` |
-| `name` | String | "Student union" |
-| `aliases` | [String] | Lowercased text that maps typed locations to this place (`union`, `student union`) |
-| `kind` | `building` \| `quad` \| `field` | Changes how the map draws it |
-| `map.x`, `map.y`, `map.w`, `map.h` | Number | Position on the SVG |
-| `geo` | GeoJSON Point, optional | Real coordinates, if the project later moves to a tiled map |
+| `key` | String, unique | Slug of the name: `illini-union`, `main-quad`, `activities-and-recreation-center` |
+| `name` | String | "Illini Union" |
+| `aliases` | [String] | Lowercased names that map typed or imported locations to this place: `union`, `student union`, `the arc`, `ugl`. Includes OpenStreetMap's alternate names plus a short manual list |
+| `kind` | `building` \| `residence` \| `library` \| `venue` \| `recreation` \| `quad` \| `green` \| `field` | Changes how the map styles it |
+| `osmId` | String, unique when set | `way/123456`, so re-running the import updates places instead of duplicating them |
+| `facilityNumber` | String, optional | The university's building number, when OpenStreetMap has it |
+| `geo` | GeoJSON Point, required, 2dsphere index | Where the pin goes: the outline's center |
+| `outline` | GeoJSON Polygon | The building's real shape, simplified to about a meter |
+| `address` | String, optional | |
 
-When an organizer types a location or a listing is imported, the server matches the text against `aliases` and saves the match in `event.location.place`. If nothing matches, `place` stays empty and the event shows under "Not on the map."
+The website projects `[longitude, latitude]` onto the SVG map with `project()` in [`shared/src/campus.ts`](../shared/src/campus.ts). When a listing's location doesn't match any place's aliases, `location.place` stays empty and the event shows under "Not on the map."
 
 ## sources
 
@@ -192,7 +195,7 @@ One document per user per event, created the first time a signed-in user RSVPs, 
 |---|---|---|
 | users | `email` unique, `firebaseUid` unique when set | Sign-in |
 | organizations | `slug` unique, `members.user` | "Which organizations can I manage?" |
-| places | `key` unique, `aliases`, `geo` 2dsphere | Location matching, a future real map |
+| places | `key` unique, `aliases`, `geo` 2dsphere, `osmId` unique when set | Location matching, nearby queries, re-imports |
 | sources | `(kind, handle)` unique when handle is set, `(kind, active)` | Imports, admin cards |
 | events | `(status, startsAt)` | Landing, Discover, Week |
 | events | `(status, category, startsAt)` | Category filter |
