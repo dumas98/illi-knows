@@ -53,12 +53,7 @@ function wrap(ui: ReactNode, auth: AuthContextValue) {
   );
 }
 
-const inDays = (d: number, h = 19) => {
-  const t = new Date();
-  t.setDate(t.getDate() + d);
-  t.setHours(h, 0, 0, 0);
-  return t.toISOString();
-};
+const inDays = (d: number, extraHours = 0) => new Date(Date.now() + d * 86_400_000 + extraHours * 3_600_000).toISOString();
 
 function summary(id: string, title: string, day: number, extra: Partial<EventSummaryDTO> = {}): EventSummaryDTO {
   return {
@@ -66,7 +61,7 @@ function summary(id: string, title: string, day: number, extra: Partial<EventSum
     title,
     category: 'Music',
     startsAt: inDays(day),
-    endsAt: inDays(day, 21),
+    endsAt: inDays(day, 2),
     place: { id: `p${id}`, key: 'illini-union', name: 'Illini Union' },
     locationText: 'Illini Union, ballroom',
     locationDetail: 'Ballroom',
