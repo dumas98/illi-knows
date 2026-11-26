@@ -41,6 +41,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (parsed.data.EMAIL_PROVIDER !== 'console' && (!parsed.data.EMAIL_API_KEY || !parsed.data.EMAIL_FROM)) {
     throw new Error(`EMAIL_PROVIDER=${parsed.data.EMAIL_PROVIDER} needs EMAIL_API_KEY and EMAIL_FROM.`);
   }
+  if (parsed.data.NODE_ENV === 'production' && parsed.data.DEMO_MODE) {
+    throw new Error('DEMO_MODE lets anyone act as the demo admin, so it must be off in production.');
+  }
   if (parsed.data.NODE_ENV === 'production' && parsed.data.FIREBASE_AUTH_EMULATOR_HOST) {
     throw new Error('FIREBASE_AUTH_EMULATOR_HOST must not be set in production.');
   }

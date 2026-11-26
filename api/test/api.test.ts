@@ -42,6 +42,18 @@ describe('GET /api/health', () => {
   });
 });
 
+describe('Rate limits', () => {
+  it('slows down a client that sends too many changes', async () => {
+    const limited = testApp({ rateLimits: true });
+    let last = 0;
+    for (let i = 0; i < 121; i++) last = (await request(limited).post('/api/nope').send({})).status;
+    expect(last).toBe(429);
+    const res = await request(limited).post('/api/nope').send({});
+    expect(res.body.error.code).toBe('rate_limited');
+    expect((await request(limited).get('/api/health')).status).toBe(200);
+  });
+});
+
 describe('GET /api/events', () => {
   it('lists only upcoming published events, soonest first', async () => {
     const res = await request(app).get('/api/events?limit=100');

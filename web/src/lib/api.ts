@@ -1,4 +1,5 @@
-import { CAMPUS_EMAIL_DOMAIN, type ApiErrorBody } from '@illi-knows/shared';
+import { CAMPUS_EMAIL_DOMAIN, DEMO_HEADER, type ApiErrorBody } from '@illi-knows/shared';
+import { getDemoPersona } from './demo';
 import { auth } from './firebase';
 
 export const API_URL = import.meta.env.VITE_API_URL ?? '';
@@ -23,7 +24,10 @@ export function canUseAccount(email: string | null | undefined): boolean {
 
 async function authHeader(): Promise<Record<string, string>> {
   const user = auth.currentUser;
-  if (!user || !user.emailVerified || !canUseAccount(user.email)) return {};
+  if (!user || !user.emailVerified || !canUseAccount(user.email)) {
+    const persona = getDemoPersona();
+    return persona ? { [DEMO_HEADER]: persona } : {};
+  }
   return { Authorization: `Bearer ${await user.getIdToken()}` };
 }
 

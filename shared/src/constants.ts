@@ -61,3 +61,12 @@ export type PlaceKind = (typeof PLACE_KINDS)[number];
 
 export const ORG_KINDS = ['club', 'department', 'office', 'other'] as const;
 export type OrgKind = (typeof ORG_KINDS)[number];
+
+/** The three seeded accounts behind the demo "View as" menu. Only used when the API runs with DEMO_MODE. */
+export const DEMO_PERSONAS = [
+  { key: 'student', name: 'Denise Ruiz', email: 'denise.ruiz@example.edu', label: 'Denise, student', home: '/' },
+  { key: 'organizer', name: 'Tim Okafor', email: 'tim.okafor@example.edu', label: 'Tim, organizer', home: '/organize' },
+  { key: 'admin', name: 'Alex Moreno', email: 'alex.moreno@example.edu', label: 'Alex, admin', home: '/review' }
+] as const;
+export type DemoPersonaKey = (typeof DEMO_PERSONAS)[number]['key'];
+export const DEMO_HEADER = 'x-demo-persona';

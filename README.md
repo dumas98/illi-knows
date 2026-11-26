@@ -20,6 +20,7 @@ npm run dev:web                       # http://localhost:5173
 | Command | What it does |
 |---|---|
 | `npm run check` | Type checks, lint, and API tests (the same as CI) |
+| `npm run e2e` | End-to-end tests in a real browser (Playwright): a guest and the three demo personas click through the site, with axe accessibility checks and a phone-width check. Starts its own API on an in-memory database and its own web server. First time: `npx playwright install chromium` |
 | `npm run seed` | Wipes and refills the database in `MONGODB_URI` with fake data. Refuses to touch the production database (`illi-knows`) |
 | `npm run grant-role -- you@illinois.edu admin` | Gives an account the `organizer` or `admin` role. Works before or after that person first signs in |
 | `npm run campus:import -w @illi-knows/api` | Re-downloads the campus from OpenStreetMap: rewrites `web/public/map/campus-basemap.json` and `api/src/seed/campus-places.json`. Run `npm run seed` afterwards |
@@ -38,7 +39,9 @@ Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright
 
 [`mock/illi-knows-ikd.html`](mock/illi-knows-ikd.html) is the approved clickable mock (version IKD). Open it in a browser. It is the source of truth for layout, copy, colors, and behavior. Every event, person, and number in it is made up.
 
-Use the **View as** menu in the header to switch between:
+The running app has the same **View as** menu when the API runs with `DEMO_MODE=true` (the default in `api/.env.example`): pick Denise, Tim, or Alex to act as that seeded account without signing in. The API refuses to start with demo mode on in production, because anyone could act as the demo admin.
+
+In the mock, use the **View as** menu in the header to switch between:
 
 | View | Lands on | What it covers |
 |---|---|---|

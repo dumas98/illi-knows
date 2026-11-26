@@ -7,6 +7,7 @@ import { LoadState } from '../components/LoadState';
 import { catClass, dayKey, fmtDay, fmtDayNum, fmtLongDay, fmtMonth, fmtPrice, fmtTime, relativeDay } from '../lib/format';
 import { usePlaces, usePlanner, useRsvp } from '../queries';
 import { useToast } from '../toast-context';
+import { usePageTitle } from '../lib/usePageTitle';
 
 function relative(iso: string): string {
   const days = Math.round((Date.parse(dayKey(iso)) - Date.parse(dayKey(new Date()))) / 86_400_000);
@@ -199,6 +200,7 @@ export function PlannerBody({ data }: { data: PlannerDTO }) {
 }
 
 export function Planner() {
+  usePageTitle('Your planner');
   const { status, me, openSignIn } = useAuth();
   const planner = usePlanner();
 

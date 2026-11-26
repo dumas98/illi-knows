@@ -138,7 +138,7 @@ describe('Discover page', () => {
     const tuesdayNoon = new Date(campusMidnight(addDaysKey(monday, 1)).getTime() + 12 * 3_600_000).toISOString();
     const fetchMock = stubApi([event('w1', 'Jazz combo recital', tuesdayNoon, 2, { viewer: { going: true, anonymous: false, inCalendar: false, reminder: 'none' } })]);
     renderDiscover('/discover?view=week');
-    await waitFor(() => expect(screen.getByRole('link', { name: /Jazz combo recital, .* at 12:00 pm, you’re going/ })).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole('link', { name: /^12:00 pm Jazz combo recital, .*, you’re going$/ })).toBeTruthy());
     expect(screen.getByText('1 event this week')).toBeTruthy();
     expect(screen.getByText(weekLabel(monday))).toBeTruthy();
     const call = eventCalls(fetchMock).at(-1)!;

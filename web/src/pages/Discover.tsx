@@ -8,6 +8,7 @@ import { WeekGrid } from '../components/WeekGrid';
 import { addDaysKey, campusMidnight, dayKey, weekLabel, weekStartKey } from '../lib/format';
 import { WHENS, whenRange } from '../lib/when';
 import { useAllEvents, useEventPages, usePlaces } from '../queries';
+import { usePageTitle } from '../lib/usePageTitle';
 
 const VIEWS = [
   ['list', 'List'],
@@ -21,6 +22,7 @@ const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? o
 const iso = (key: string) => campusMidnight(key).toISOString();
 
 export function Discover() {
+  usePageTitle('Discover events');
   const [params, setParams] = useSearchParams();
   const [today] = useState(() => dayKey(new Date()));
   const view = pick(VIEWS.map(v => v[0]), params.get('view'), 'list');

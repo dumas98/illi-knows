@@ -22,8 +22,9 @@ export const fakeVerifier: TokenVerifier = async token => {
 
 export const JOBS_KEY = 'test-jobs-key-0123456789';
 
-export function testApp(extra: { mailer?: Mailer } = {}) {
+export function testApp(extra: { mailer?: Mailer; rateLimits?: boolean } = {}) {
   return createApp({
+    rateLimits: false,
     ...extra,
     config: { CORS_ORIGINS: ['http://localhost:5173'], ALLOWED_EMAIL_DOMAIN: 'illinois.edu', REQUIRE_VERIFIED_EMAIL: true, DEMO_MODE: false, PUBLIC_WEB_URL: 'https://illi-knows.web.app', INGEST_API_KEY: INGEST_KEY, JOBS_API_KEY: JOBS_KEY },
     verifyToken: fakeVerifier

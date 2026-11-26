@@ -1,4 +1,4 @@
-import type { Category, EventStatus, FeedKind, FlagCode, FoundVia, PlaceKind, Reminder, ReviewDecision, Role, SourceKind } from './constants.js';
+import type { Category, DemoPersonaKey, EventStatus, FeedKind, FlagCode, FoundVia, PlaceKind, Reminder, ReviewDecision, Role, SourceKind } from './constants.js';
 
 export interface ApiErrorBody {
   error: { code: string; message: string; details?: unknown };
@@ -242,4 +242,11 @@ export interface IngestResponse {
   source: { id: string; name: string };
   counts: Record<IngestResult, number>;
   results: { externalId: string; result: IngestResult; eventId: string | null; flags: FlagCode[]; errors?: Record<string, string[]>; reason?: string }[];
+}
+
+export interface ConfigDTO {
+  demoMode: boolean;
+  allowedEmailDomain: string;
+  /** Filled only when demoMode is on. */
+  demoPersonas: { key: DemoPersonaKey; label: string; home: string }[];
 }

@@ -8,6 +8,7 @@ import { fmtDay, fmtTime } from '../lib/format';
 import { statusClass, statusLabel } from '../lib/status';
 import { useDeleteEvent, useOrganizerEvents, usePlaces } from '../queries';
 import { useToast } from '../toast-context';
+import { usePageTitle } from '../lib/usePageTitle';
 
 export function StatusPill({ event }: { event: Pick<OrganizerEventDTO, 'status' | 'ended'> }) {
   return <span className={`pill ${statusClass(event)}`}>{statusLabel(event)}</span>;
@@ -119,6 +120,7 @@ function EventsTable({ events }: { events: OrganizerEventDTO[] }) {
 }
 
 export function Organize() {
+  usePageTitle('Manage events');
   const { status, me } = useAuth();
   const events = useOrganizerEvents();
   const places = usePlaces();

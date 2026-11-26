@@ -1,6 +1,6 @@
 import { Faker, en } from '@faker-js/faker';
 import { Types } from 'mongoose';
-import { REMINDER_MINUTES, type FoundVia, type Reminder } from '@illi-knows/shared';
+import { DEMO_PERSONAS, REMINDER_MINUTES, type FoundVia, type Reminder } from '@illi-knows/shared';
 import { addDays, campusDay, campusTime, weekday } from '../lib/time.js';
 import { ALL_MODELS, Event, Organization, Place, Rsvp, Source, User } from '../models/index.js';
 import { FAKE_EMAIL_DOMAIN, ORGS, REVIEW_QUEUE, TEMPLATES, loadCampusPlaces, type EventTemplate } from './data.js';
@@ -84,12 +84,10 @@ export async function seedDatabase(opts: SeedOptions = {}): Promise<SeedResult> 
   const missing = [...new Set(wanted.filter((k): k is string => !!k && !placeByKey.has(k)))];
   if (missing.length) console.warn(`Seed venues not found on the campus map, so their events won't be pinned: ${missing.join(', ')}`);
 
-  const personas = [
-    { name: 'Denise Ruiz', email: `denise.ruiz@${FAKE_EMAIL_DOMAIN}`, roles: ['student'] },
-    { name: 'Tim Okafor', email: `tim.okafor@${FAKE_EMAIL_DOMAIN}`, roles: ['student', 'organizer'] },
-    { name: 'Alex Moreno', email: `alex.moreno@${FAKE_EMAIL_DOMAIN}`, roles: ['student', 'admin'] }
-  ];
-  const emails = new Set(personas.map(p => p.email));
+  // The same three accounts the demo "View as" menu signs in as.
+  const personaRoles: Record<string, string[]> = { student: ['student'], organizer: ['student', 'organizer'], admin: ['student', 'admin'] };
+  const personas = DEMO_PERSONAS.map(p => ({ name: p.name as string, email: p.email as string, roles: personaRoles[p.key]! }));
+  const emails = new Set<string>(personas.map(p => p.email));
   const people: { name: string; email: string; roles: string[] }[] = [...personas];
   while (people.length < personas.length + (opts.fakeUsers ?? 150)) {
     const first = f.person.firstName();

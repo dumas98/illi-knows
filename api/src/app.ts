@@ -1,9 +1,10 @@
 import cors from 'cors';
 import express, { type ErrorRequestHandler, type Express } from 'express';
+import { rateLimit } from 'express-rate-limit';
 import helmet from 'helmet';
 import mongoose from 'mongoose';
 import { pinoHttp } from 'pino-http';
-import type { ApiErrorBody } from '@illi-knows/shared';
+import { DEMO_PERSONAS, type ApiErrorBody } from '@illi-knows/shared';
 import { authenticate } from './auth/middleware.js';
 import type { TokenVerifier } from './auth/firebase.js';
 import type { Config } from './config.js';
@@ -22,13 +23,15 @@ export interface AppDeps {
   mailer?: Mailer;
   verifyToken: TokenVerifier;
   logRequests?: boolean;
+  /** Per-IP request limits. Tests turn them off. */
+  rateLimits?: boolean;
 }
 
 function errorBody(code: string, message: string, details?: unknown): ApiErrorBody {
   return { error: details === undefined ? { code, message } : { code, message, details } };
 }
 
-export function createApp({ config, verifyToken, logRequests = false, mailer = consoleMailer() }: AppDeps): Express {
+export function createApp({ config, verifyToken, logRequests = false, mailer = consoleMailer(), rateLimits = true }: AppDeps): Express {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
@@ -42,13 +45,39 @@ export function createApp({ config, verifyToken, logRequests = false, mailer = c
   app.use('/api/ingest', express.json({ limit: '2mb' }));
   app.use(express.json({ limit: '100kb' }));
 
+  if (rateLimits) {
+    const limited = (message: string) => (_req: express.Request, res: express.Response) =>
+      void res.status(429).json(errorBody('rate_limited', message));
+    // Generous, because a classroom can share one campus IP and each page makes several requests.
+    // Tighter for anything that changes data.
+    app.use(
+      '/api',
+      rateLimit({ windowMs: 60_000, limit: 1000, standardHeaders: 'draft-8', legacyHeaders: false, handler: limited('Too many requests. Wait a minute and try again.') })
+    );
+    app.use(
+      '/api',
+      rateLimit({
+        windowMs: 60_000,
+        limit: 120,
+        standardHeaders: 'draft-8',
+        legacyHeaders: false,
+        skip: req => req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS',
+        handler: limited('Too many changes in a short time. Wait a minute and try again.')
+      })
+    );
+  }
+
   app.get('/api/health', (_req, res) => {
     const db = mongoose.connection.readyState === 1 ? 'up' : 'down';
     res.status(db === 'up' ? 200 : 503).json({ ok: db === 'up', db });
   });
 
   app.get('/api/config', (_req, res) => {
-    res.json({ demoMode: config.DEMO_MODE, allowedEmailDomain: config.ALLOWED_EMAIL_DOMAIN });
+    res.json({
+      demoMode: config.DEMO_MODE,
+      allowedEmailDomain: config.ALLOWED_EMAIL_DOMAIN,
+      demoPersonas: config.DEMO_MODE ? DEMO_PERSONAS.map(({ key, label, home }) => ({ key, label, home })) : []
+    });
   });
 
   app.use(
@@ -56,7 +85,8 @@ export function createApp({ config, verifyToken, logRequests = false, mailer = c
     authenticate({
       verifyToken,
       allowedEmailDomain: config.ALLOWED_EMAIL_DOMAIN,
-      requireVerifiedEmail: config.REQUIRE_VERIFIED_EMAIL
+      requireVerifiedEmail: config.REQUIRE_VERIFIED_EMAIL,
+      demoMode: config.DEMO_MODE
     })
   );
   app.use('/api/events', eventsRouter({ webUrl: config.PUBLIC_WEB_URL }));

@@ -1,12 +1,40 @@
-import { useState, type FormEvent } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import type { DemoPersonaKey } from '@illi-knows/shared';
 import { useAuth } from '../auth/context';
 import { SignInDialog } from '../auth/SignInDialog';
 import { initials } from '../lib/format';
 import { usePlanner, useReviewQueue } from '../queries';
+import { useToast } from '../toast-context';
+
+function ViewAs() {
+  const { demo } = useAuth();
+  const navigate = useNavigate();
+  const toast = useToast();
+  if (!demo) return null;
+  const change = async (value: string) => {
+    const persona = demo.personas.find(p => p.key === value) ?? null;
+    await demo.viewAs((persona?.key as DemoPersonaKey | undefined) ?? null);
+    navigate(persona?.home ?? '/');
+    toast(persona ? `Now viewing as ${persona.label}` : 'Now viewing the landing page as a guest');
+  };
+  return (
+    <label className="viewas">
+      <span>View as</span>
+      <select value={demo.persona ?? 'landing'} onChange={e => void change(e.target.value)}>
+        <option value="landing">Landing page</option>
+        {demo.personas.map(p => (
+          <option key={p.key} value={p.key}>
+            {p.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
 
 function Header() {
-  const { status, me, openSignIn, signOut } = useAuth();
+  const { status, me, openSignIn, signOut, demo } = useAuth();
   const planner = usePlanner();
   const upcoming = planner.data?.stats.upcoming ?? 0;
   const waiting = useReviewQueue('pending').data?.counts.pending ?? 0;
@@ -20,6 +48,9 @@ function Header() {
 
   return (
     <header className="top">
+      <a className="skip" href="#main">
+        Skip to content
+      </a>
       <div className="wrap top-row">
         <NavLink className="brand" to="/">
           <span className="brand-mark" aria-hidden="true" />
@@ -38,9 +69,10 @@ function Header() {
           </button>
         </form>
         <div className="who">
+          <ViewAs />
           {status === 'signed-in' && me ? (
             <>
-              <span>{me.name}</span>
+              {!demo && <span>{me.name}</span>}
               <span className="avatar" aria-hidden="true">
                 {initials(me.name)}
               </span>
@@ -96,11 +128,28 @@ function Header() {
   );
 }
 
+/** On a new page, start at the top and move keyboard and screen-reader focus to the content. */
+function useFocusOnNavigate() {
+  const { pathname } = useLocation();
+  const main = useRef<HTMLElement>(null);
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    window.scrollTo(0, 0);
+    main.current?.focus({ preventScroll: true });
+  }, [pathname]);
+  return main;
+}
+
 export function Layout() {
+  const main = useFocusOnNavigate();
   return (
     <>
       <Header />
-      <main className="wrap page">
+      <main className="wrap page" id="main" ref={main} tabIndex={-1}>
         <Outlet />
       </main>
       <footer className="site">

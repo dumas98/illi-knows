@@ -6,6 +6,7 @@ import { ApiError } from '../lib/api';
 import { addDaysKey, campusMinutes, dayKey } from '../lib/format';
 import { useAddTip, useOrganizerEvent, usePlaces, useSaveEvent } from '../queries';
 import { useToast } from '../toast-context';
+import { usePageTitle } from '../lib/usePageTitle';
 import { SignInToOrganize, StatusPill } from './Organize';
 
 interface FormState {
@@ -374,6 +375,7 @@ function FormBody({ event, today, mode = 'event' }: { event?: OrganizerEventDTO;
 
 export function EventForm() {
   const { id } = useParams();
+  usePageTitle(id ? 'Edit event' : 'Create event');
   const { status } = useAuth();
   const existing = useOrganizerEvent(id);
   const [today] = useState(() => dayKey(new Date()));
@@ -416,6 +418,7 @@ export function EventForm() {
 }
 
 export function TipForm() {
+  usePageTitle('Add a word-of-mouth tip');
   const { status, me } = useAuth();
   const [today] = useState(() => dayKey(new Date()));
   if (status === 'loading') return <div className="skeleton">Loading…</div>;

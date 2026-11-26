@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { User } from 'firebase/auth';
-import type { MeDTO } from '@illi-knows/shared';
+import type { ConfigDTO, DemoPersonaKey, MeDTO } from '@illi-knows/shared';
 
 export type AuthStatus = 'loading' | 'guest' | 'unverified' | 'signed-in';
 
@@ -21,6 +21,12 @@ export interface AuthContextValue {
   openSignIn(title?: string): void;
   closeDialog(): void;
   clearError(): void;
+  /** The demo "View as" menu. Present only when the API runs in demo mode. */
+  demo?: {
+    personas: ConfigDTO['demoPersonas'];
+    persona: DemoPersonaKey | null;
+    viewAs(key: DemoPersonaKey | null): Promise<void>;
+  };
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

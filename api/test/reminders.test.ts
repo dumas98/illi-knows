@@ -139,7 +139,7 @@ describe('Reminder endpoint', () => {
     expect(res.body).toMatchObject({ mailer: 'fake', sent: 1, failed: 0 });
     expect(mailer.sent).toHaveLength(1);
 
-    const unset = createApp({ config: { CORS_ORIGINS: [], ALLOWED_EMAIL_DOMAIN: 'illinois.edu', REQUIRE_VERIFIED_EMAIL: true, DEMO_MODE: false, PUBLIC_WEB_URL: 'x' }, verifyToken: fakeVerifier });
+    const unset = createApp({ config: { CORS_ORIGINS: [], ALLOWED_EMAIL_DOMAIN: 'illinois.edu', REQUIRE_VERIFIED_EMAIL: true, DEMO_MODE: false, PUBLIC_WEB_URL: 'x' }, verifyToken: fakeVerifier, rateLimits: false });
     expect((await request(unset).post('/api/jobs/reminders').set('X-Jobs-Key', JOBS_KEY)).status).toBe(503);
   });
 

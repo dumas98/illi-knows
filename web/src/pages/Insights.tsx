@@ -6,6 +6,7 @@ import { LoadState } from '../components/LoadState';
 import { fmtDay } from '../lib/format';
 import { useInsights, useOrganizerEvents } from '../queries';
 import { SignInToOrganize } from './Organize';
+import { usePageTitle } from '../lib/usePageTitle';
 
 const pct = (part: number, whole: number) => (whole > 0 ? `${Math.round((part / whole) * 100)}%` : '–');
 
@@ -103,6 +104,7 @@ function InsightsBody({ data }: { data: InsightsDTO }) {
 }
 
 export function Insights() {
+  usePageTitle('Insights');
   const { id } = useParams();
   const navigate = useNavigate();
   const { status, me } = useAuth();

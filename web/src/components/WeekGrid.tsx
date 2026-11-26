@@ -44,10 +44,10 @@ export function WeekGrid({ start, today, events, loading = false }: { start: str
                       to={`/events/${p.event.id}`}
                       className={`blk ${catClass(p.event.category)}${going ? ' mine' : ''}`}
                       style={{ top, height, left: `calc(${(p.lane / lanes) * 100}% + 3px)`, width: `calc(${100 / lanes}% - 6px)` }}
-                      aria-label={`${p.event.title}, ${fmtDay(p.event.startsAt)} at ${fmtTime(p.event.startsAt)}${going ? ', you’re going' : ''}`}
+                      aria-label={`${fmtTime(p.event.startsAt)} ${p.event.title}, ${fmtDay(p.event.startsAt)}${going ? ', you’re going' : ''}`}
                       title={`${p.event.title}, ${fmtTime(p.event.startsAt)}`}
                     >
-                      <span className="blk-t">{fmtTime(p.event.startsAt)}</span>
+                      <span className="blk-t">{fmtTime(p.event.startsAt)}</span>{' '}
                       <span className="blk-n">{p.event.title}</span>
                     </Link>
                   );

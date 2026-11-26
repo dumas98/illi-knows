@@ -11,12 +11,14 @@ import { Organize } from './pages/Organize';
 import { Planner } from './pages/Planner';
 import { Review } from './pages/Review';
 import { ToastProvider } from './ToastProvider';
+import { usePageTitle } from './lib/usePageTitle';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false } }
 });
 
 function NotFound() {
+  usePageTitle('Page not found');
   return (
     <section className="panel empty stack">
       <h1>Page not found</h1>

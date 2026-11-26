@@ -6,10 +6,12 @@ import { EventMapList } from '../components/EventMapList';
 import { LoadState } from '../components/LoadState';
 import { catClass, dayKey, fmtLongDay } from '../lib/format';
 import { useEvents, usePlaces } from '../queries';
+import { usePageTitle } from '../lib/usePageTitle';
 
 const WEEK_MS = 7 * 86_400_000;
 
 export function Home() {
+  usePageTitle(null);
   const { status, me, openSignIn, requireSignIn } = useAuth();
   const navigate = useNavigate();
   const places = usePlaces();

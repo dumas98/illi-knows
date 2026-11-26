@@ -1,7 +1,7 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
-import type { Role } from '@illi-knows/shared';
+import { DEMO_HEADER, DEMO_PERSONAS, type Role } from '@illi-knows/shared';
 import { HttpError, forbidden, unauthorized } from '../lib/errors.js';
-import type { UserDoc } from '../models/index.js';
+import { User, type UserDoc } from '../models/index.js';
 import { findOrCreateUser } from '../services/users.js';
 import type { TokenVerifier } from './firebase.js';
 
@@ -9,6 +9,8 @@ export interface AuthOptions {
   verifyToken: TokenVerifier;
   allowedEmailDomain: string;
   requireVerifiedEmail: boolean;
+  /** Accept the X-Demo-Persona header instead of a Firebase token. Never on in production. */
+  demoMode?: boolean;
 }
 
 export function currentUser(res: Response): UserDoc | undefined {
@@ -19,7 +21,17 @@ export function authenticate(opts: AuthOptions): RequestHandler {
   const suffix = '@' + opts.allowedEmailDomain.toLowerCase();
   return async (req: Request, res: Response, next: NextFunction) => {
     const header = req.get('authorization');
-    if (!header) return next();
+    if (!header) {
+      const key = opts.demoMode ? req.get(DEMO_HEADER) : undefined;
+      if (!key) return next();
+      const persona = DEMO_PERSONAS.find(p => p.key === key);
+      if (!persona) throw new HttpError(400, 'demo_persona', `Unknown demo persona "${key}".`);
+      const user = await User.findOne({ email: persona.email });
+      if (!user) throw new HttpError(409, 'demo_not_seeded', 'The demo accounts are missing. Run npm run seed.');
+      res.locals.user = user;
+      res.locals.demo = true;
+      return next();
+    }
 
     const match = /^Bearer\s+(.+)$/i.exec(header);
     const idToken = match?.[1];

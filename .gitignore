@@ -14,3 +14,7 @@ ui-debug.log
 __pycache__/
 .venv/
 !web/.env.production
+
+# Playwright
+playwright-report/
+test-results/

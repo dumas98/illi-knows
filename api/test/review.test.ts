@@ -150,7 +150,7 @@ describe('Ingestion', () => {
   it('needs the right key', async () => {
     expect((await ingest({}, null)).status).toBe(401);
     expect((await ingest({}, 'wrong-key-wrong-key-wrong')).status).toBe(401);
-    const noKey = createApp({ config: { CORS_ORIGINS: [], ALLOWED_EMAIL_DOMAIN: 'illinois.edu', REQUIRE_VERIFIED_EMAIL: true, DEMO_MODE: false, PUBLIC_WEB_URL: 'x' }, verifyToken: fakeVerifier });
+    const noKey = createApp({ config: { CORS_ORIGINS: [], ALLOWED_EMAIL_DOMAIN: 'illinois.edu', REQUIRE_VERIFIED_EMAIL: true, DEMO_MODE: false, PUBLIC_WEB_URL: 'x' }, verifyToken: fakeVerifier, rateLimits: false });
     expect((await request(noKey).post('/api/ingest/listings').set('X-Api-Key', INGEST_KEY).send({})).status).toBe(503);
   });
 

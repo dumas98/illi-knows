@@ -8,6 +8,7 @@ import { catClass, fmtDay, fmtDayNum, fmtMonth, fmtTime, timeAgo } from '../lib/
 import { usePlaces, useReviewDecision, useReviewQueue, useSources } from '../queries';
 import { useToast } from '../toast-context';
 import { SignInToOrganize, StatusPill } from './Organize';
+import { usePageTitle } from '../lib/usePageTitle';
 
 const DONE: Record<ReviewAction, string> = {
   approve: 'approved and published',
@@ -180,6 +181,7 @@ function QueueRow({ item }: { item: ReviewItemDTO }) {
 }
 
 export function Review() {
+  usePageTitle('Review queue');
   const { status, me } = useAuth();
   const [params, setParams] = useSearchParams();
   const tab = (REVIEW_TABS as readonly string[]).includes(params.get('tab') ?? '') ? (params.get('tab') as ReviewTab) : 'pending';

@@ -7,6 +7,7 @@ import { API_URL, ApiError } from '../lib/api';
 import { catClass, fmtLongDay, fmtMonth, fmtDayNum, fmtPrice, fmtTime, initials } from '../lib/format';
 import { useAttendees, useEvent, usePlaces, useRsvp } from '../queries';
 import { useToast } from '../toast-context';
+import { usePageTitle } from '../lib/usePageTitle';
 
 const ICONS = {
   cal: (
@@ -201,6 +202,7 @@ export function RsvpPanel({ event }: { event: EventDetailDTO }) {
 export function EventPage() {
   const { id } = useParams();
   const event = useEvent(id);
+  usePageTitle(event.data?.title ?? (event.isError ? 'Event not found' : 'Event'));
   const places = usePlaces();
   const toast = useToast();
 

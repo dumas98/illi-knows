@@ -16,7 +16,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={show}>
       {children}
-      <div id="toast" role="status" aria-live="polite" hidden={!toast}>
+      {/* The live region stays in the page so screen readers announce each new message. */}
+      <div id="toast" role="status" aria-live="polite" data-open={toast ? '' : undefined}>
         <span>{toast?.message}</span>
         {toast?.action && (
           <button

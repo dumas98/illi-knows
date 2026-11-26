@@ -12,8 +12,9 @@ import {
   updateProfile,
   type User
 } from 'firebase/auth';
-import { CAMPUS_EMAIL_DOMAIN, type MeDTO } from '@illi-knows/shared';
+import { CAMPUS_EMAIL_DOMAIN, type ConfigDTO, type DemoPersonaKey, type MeDTO } from '@illi-knows/shared';
 import { ApiError, api, canUseAccount } from '../lib/api';
+import { getDemoPersona, setDemoPersona } from '../lib/demo';
 import { auth } from '../lib/firebase';
 import { AuthContext, type AuthContextValue, type AuthStatus } from './context';
 
@@ -56,9 +57,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [busy, setBusy] = useState(false);
   const [dialog, setDialog] = useState({ open: false, title: 'Sign in to Illi-Knows' });
   const after = useRef<(() => void) | null>(null);
+  const [persona, setPersona] = useState<DemoPersonaKey | null>(getDemoPersona);
+  const config = useQuery({
+    queryKey: ['config'],
+    queryFn: ({ signal }) => api<ConfigDTO>('/api/config', { signal }),
+    staleTime: Infinity,
+    retry: 1
+  });
+  const demoMode = !!config.data?.demoMode;
+  // A persona only counts while the API is in demo mode and nobody is signed in for real.
+  const demoPersona = demoMode && !firebaseUser ? persona : null;
 
   const signOut = useCallback(async () => {
     after.current = null;
+    setDemoPersona(null);
+    setPersona(null);
     await firebaseSignOut(auth);
     queryClient.removeQueries({ queryKey: ['me'] });
     await queryClient.invalidateQueries();
@@ -79,10 +92,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const usable = !!firebaseUser && firebaseUser.emailVerified && canUseAccount(firebaseUser.email);
+  const meKey = ['me', firebaseUser?.uid ?? (demoPersona ? `demo:${demoPersona}` : undefined)];
   const meQuery = useQuery({
-    queryKey: ['me', firebaseUser?.uid],
+    queryKey: meKey,
     queryFn: async () => {
-      const firstLoad = !queryClient.getQueryData(['me', firebaseUser?.uid]);
+      const firstLoad = !queryClient.getQueryData(meKey);
       let me: MeDTO;
       try {
         me = await api<MeDTO>('/api/me');
@@ -100,13 +114,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return me;
     },
-    enabled: usable,
+    enabled: usable || !!demoPersona,
     retry: false,
     staleTime: 5 * 60_000
   });
 
   let status: AuthStatus = 'loading';
   if (!ready) status = 'loading';
+  else if (demoPersona) status = meQuery.data ? 'signed-in' : meQuery.isError ? 'guest' : 'loading';
   else if (!firebaseUser || !canUseAccount(firebaseUser.email)) status = 'guest';
   else if (!firebaseUser.emailVerified) status = 'unverified';
   else if (meQuery.data) status = 'signed-in';
@@ -182,9 +197,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         after.current = null;
         setDialog(d => ({ ...d, open: false }));
       },
-      clearError: () => setError(null)
+      clearError: () => setError(null),
+      demo: demoMode
+        ? {
+            personas: config.data?.demoPersonas ?? [],
+            persona: demoPersona,
+            viewAs: async key => {
+              after.current = null;
+              setDialog(d => ({ ...d, open: false }));
+              if (auth.currentUser) await firebaseSignOut(auth);
+              setDemoPersona(key);
+              setPersona(key);
+              queryClient.removeQueries({ queryKey: ['me'] });
+              await queryClient.invalidateQueries();
+            }
+          }
+        : undefined
     }),
-    [status, firebaseUser, meQuery.data, error, busy, dialog, attempt, signOut]
+    [status, firebaseUser, meQuery.data, error, busy, dialog, attempt, signOut, demoMode, demoPersona, config.data, queryClient]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
