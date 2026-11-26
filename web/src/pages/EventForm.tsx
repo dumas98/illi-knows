@@ -419,7 +419,7 @@ export function TipForm() {
   const { status, me } = useAuth();
   const [today] = useState(() => dayKey(new Date()));
   if (status === 'loading') return <div className="skeleton">Loading…</div>;
-  if (status !== 'signed-in') return <SignInToOrganize title="Add a word-of-mouth tip" />;
+  if (status !== 'signed-in') return <SignInToOrganize title="Add a word-of-mouth tip" text="Sign in with an admin account to add tips to the review queue." />;
   return (
     <section className="narrow">
       <Link to="/review">Back to the review queue</Link>

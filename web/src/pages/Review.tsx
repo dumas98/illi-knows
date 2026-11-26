@@ -190,7 +190,7 @@ export function Review() {
   const [now] = useState(() => Date.now());
 
   if (status === 'loading') return <div className="skeleton">Loading…</div>;
-  if (status !== 'signed-in') return <SignInToOrganize title="Review queue" />;
+  if (status !== 'signed-in') return <SignInToOrganize title="Review queue" text="Sign in with an admin account to review listings before they go live." />;
   if (!me?.roles.includes('admin')) {
     return (
       <section className="panel empty stack">

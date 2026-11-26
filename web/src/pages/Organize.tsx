@@ -13,12 +13,12 @@ export function StatusPill({ event }: { event: Pick<OrganizerEventDTO, 'status' 
   return <span className={`pill ${statusClass(event)}`}>{statusLabel(event)}</span>;
 }
 
-export function SignInToOrganize({ title }: { title: string }) {
+export function SignInToOrganize({ title, text = 'Sign in with your Illinois account to post events, track RSVPs, and see who showed up.' }: { title: string; text?: string }) {
   const { openSignIn } = useAuth();
   return (
     <section className="panel empty stack">
       <h1>{title}</h1>
-      <p className="muted">Sign in with your Illinois account to post events, track RSVPs, and see who showed up.</p>
+      <p className="muted">{text}</p>
       <button className="btn btn-primary" type="button" onClick={() => openSignIn('Sign in to post an event')}>
         Sign in
       </button>
