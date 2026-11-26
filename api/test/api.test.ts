@@ -56,6 +56,18 @@ describe('GET /api/events', () => {
     expect(statuses).toEqual(['published']);
   });
 
+  it('limits to a date range and includes ended events only when asked', async () => {
+    const from = new Date(Date.now() - 14 * 86_400_000).toISOString();
+    const to = new Date(Date.now() + 7 * 86_400_000).toISOString();
+    const upcoming = (await request(app).get(`/api/events?from=${from}&to=${to}&limit=100`)).body as Page<EventSummaryDTO>;
+    expect(upcoming.items.every(e => Date.parse(e.endsAt) >= Date.now() - 60_000)).toBe(true);
+    expect(upcoming.items.every(e => Date.parse(e.startsAt) < Date.parse(to))).toBe(true);
+    const all = (await request(app).get(`/api/events?from=${from}&to=${to}&includePast=true&limit=100`)).body as Page<EventSummaryDTO>;
+    expect(all.items.length).toBeGreaterThan(upcoming.items.length);
+    expect(all.items.some(e => Date.parse(e.endsAt) < Date.now())).toBe(true);
+    expect(all.items.every(e => Date.parse(e.startsAt) >= Date.parse(from))).toBe(true);
+  });
+
   it('pages with a cursor without repeating events', async () => {
     const first = (await request(app).get('/api/events?limit=4')).body as Page<EventSummaryDTO>;
     expect(first.nextCursor).toBeTruthy();

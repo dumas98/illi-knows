@@ -19,6 +19,7 @@ const ListQuery = z.object({
   free: z.stringbool().optional(),
   q: z.string().trim().min(1).max(100).optional(),
   place: z.string().trim().toLowerCase().max(40).optional(),
+  includePast: z.stringbool().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   cursor: z.string().max(200).optional()
 });
@@ -83,8 +84,8 @@ export function eventsRouter({ webUrl }: { webUrl: string }): Router {
     const q = parse(ListQuery, req.query);
     const filter: Record<string, unknown> = { status: 'published' };
     const startsAt: Record<string, Date> = {};
+    if (!q.includePast) filter.endsAt = { $gte: new Date() };
     if (q.from) startsAt.$gte = q.from;
-    else filter.endsAt = { $gte: new Date() };
     if (q.to) startsAt.$lt = q.to;
     if (Object.keys(startsAt).length) filter.startsAt = startsAt;
     if (q.category) filter.category = q.category;

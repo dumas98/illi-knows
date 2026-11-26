@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AttendeesDTO, CampusBasemap, EventDetailDTO, EventSummaryDTO, EventsQuery, Page, PlaceDTO, PlannerDTO, RsvpUpdate } from '@illi-knows/shared';
 import { useAuth } from './auth/context';
 import { api, query } from './lib/api';
@@ -17,6 +17,47 @@ export function useEvents(params: EventsQuery) {
     queryKey: ['events', params, me?.id ?? null],
     queryFn: ({ signal }) => api<Page<EventSummaryDTO>>(`/api/events${query({ ...params })}`, { signal }),
     staleTime: 60_000
+  });
+}
+
+/** Paged list for "Show more". */
+export function useEventPages(params: EventsQuery, enabled = true) {
+  const { me } = useAuth();
+  return useInfiniteQuery({
+    queryKey: ['events', 'pages', params, me?.id ?? null],
+    queryFn: ({ signal, pageParam }) =>
+      api<Page<EventSummaryDTO>>(`/api/events${query({ ...params, cursor: pageParam ?? undefined })}`, { signal }),
+    initialPageParam: null as string | null,
+    getNextPageParam: last => last.nextCursor,
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+    enabled
+  });
+}
+
+const ALL_EVENTS_CAP = 500;
+
+/** Every matching event, following the cursor (for the map and the week grid). */
+export function useAllEvents(params: EventsQuery, enabled = true) {
+  const { me } = useAuth();
+  return useQuery({
+    queryKey: ['events', 'all', params, me?.id ?? null],
+    queryFn: async ({ signal }) => {
+      const items: EventSummaryDTO[] = [];
+      let cursor: string | null = null;
+      do {
+        const page: Page<EventSummaryDTO> = await api<Page<EventSummaryDTO>>(
+          `/api/events${query({ ...params, limit: 100, cursor: cursor ?? undefined })}`,
+          { signal }
+        );
+        items.push(...page.items);
+        cursor = page.nextCursor;
+      } while (cursor && items.length < ALL_EVENTS_CAP);
+      return { items, truncated: !!cursor };
+    },
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+    enabled
   });
 }
 

@@ -39,3 +39,64 @@ export function initials(name: string): string {
 }
 
 export const catClass = (category: string) => `cat-${category.toLowerCase()}`;
+
+/* Campus calendar math. Day keys are YYYY-MM-DD in campus time; weeks start on Monday. */
+
+const partsFmt = new Intl.DateTimeFormat('en-US', {
+  ...tz,
+  hourCycle: 'h23',
+  year: 'numeric',
+  month: 'numeric',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: 'numeric'
+});
+
+function campusParts(d: Date) {
+  const p = Object.fromEntries(partsFmt.formatToParts(d).map(x => [x.type, Number(x.value)]));
+  return { y: p.year!, m: p.month!, d: p.day!, h: p.hour!, min: p.minute! };
+}
+
+/** Minutes after midnight, campus time. */
+export function campusMinutes(d: Date | string): number {
+  const p = campusParts(new Date(d));
+  return p.h * 60 + p.min;
+}
+
+/** The instant campus clocks read 00:00 on this day. */
+export function campusMidnight(key: string): Date {
+  const [y, m, d] = key.split('-').map(Number) as [number, number, number];
+  const target = Date.UTC(y, m - 1, d);
+  let guess = target;
+  for (let i = 0; i < 3; i++) {
+    const p = campusParts(new Date(guess));
+    const shown = Date.UTC(p.y, p.m - 1, p.d, p.h, p.min);
+    guess += target - shown;
+  }
+  return new Date(guess);
+}
+
+const keyDate = (key: string) => new Date(`${key}T12:00:00Z`);
+
+export function addDaysKey(key: string, days: number): string {
+  const d = keyDate(key);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+/** 0 = Monday … 6 = Sunday. */
+export const weekdayIndex = (key: string) => (keyDate(key).getUTCDay() + 6) % 7;
+
+export const weekStartKey = (key: string) => addDaysKey(key, -weekdayIndex(key));
+
+const keyMonth = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'short' });
+const keyDow = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'short' });
+export const keyMonthName = (key: string) => keyMonth.format(keyDate(key));
+export const keyDowName = (key: string) => keyDow.format(keyDate(key));
+export const keyDayNum = (key: string) => keyDate(key).getUTCDate();
+
+export function weekLabel(start: string): string {
+  const end = addDaysKey(start, 6);
+  const a = `${keyMonthName(start)} ${keyDayNum(start)}`;
+  return keyMonthName(start) === keyMonthName(end) ? `${a} to ${keyDayNum(end)}` : `${a} to ${keyMonthName(end)} ${keyDayNum(end)}`;
+}

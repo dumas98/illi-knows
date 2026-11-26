@@ -81,6 +81,8 @@ export interface EventsQuery {
   free?: boolean;
   q?: string;
   place?: string;
+  /** Include events that have already ended. Off by default. */
+  includePast?: boolean;
   limit?: number;
   cursor?: string;
 }
