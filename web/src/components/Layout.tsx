@@ -3,12 +3,13 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/context';
 import { SignInDialog } from '../auth/SignInDialog';
 import { initials } from '../lib/format';
-import { usePlanner } from '../queries';
+import { usePlanner, useReviewQueue } from '../queries';
 
 function Header() {
   const { status, me, openSignIn, signOut } = useAuth();
   const planner = usePlanner();
   const upcoming = planner.data?.stats.upcoming ?? 0;
+  const waiting = useReviewQueue('pending').data?.counts.pending ?? 0;
   const navigate = useNavigate();
   const [q, setQ] = useState('');
 
@@ -78,6 +79,16 @@ function Header() {
               <NavLink to="/organize">Manage events</NavLink>
               <NavLink to="/insights">Insights</NavLink>
             </>
+          )}
+          {status === 'signed-in' && me?.roles.includes('admin') && (
+            <NavLink to="/review">
+              Review
+              {waiting > 0 && (
+                <span className="nbadge" aria-label={`${waiting} listings waiting for review`}>
+                  {waiting}
+                </span>
+              )}
+            </NavLink>
           )}
         </nav>
       </div>

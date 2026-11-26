@@ -3,12 +3,13 @@ import { Link, RouterProvider, createBrowserRouter, useRouteError } from 'react-
 import { AuthProvider } from './auth/AuthProvider';
 import { Layout } from './components/Layout';
 import { Discover } from './pages/Discover';
-import { EventForm } from './pages/EventForm';
+import { EventForm, TipForm } from './pages/EventForm';
 import { EventPage } from './pages/EventPage';
 import { Home } from './pages/Home';
 import { Insights } from './pages/Insights';
 import { Organize } from './pages/Organize';
 import { Planner } from './pages/Planner';
+import { Review } from './pages/Review';
 import { ToastProvider } from './ToastProvider';
 
 const queryClient = new QueryClient({
@@ -68,6 +69,8 @@ const router = createBrowserRouter([
       { path: '/organize/:id/edit', element: <EventForm /> },
       { path: '/insights', element: <Insights /> },
       { path: '/insights/:id', element: <Insights /> },
+      { path: '/review', element: <Review /> },
+      { path: '/review/tip', element: <TipForm /> },
       { path: '*', element: <NotFound /> }
     ]
   }

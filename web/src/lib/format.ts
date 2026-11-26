@@ -100,3 +100,15 @@ export function weekLabel(start: string): string {
   const a = `${keyMonthName(start)} ${keyDayNum(start)}`;
   return keyMonthName(start) === keyMonthName(end) ? `${a} to ${keyDayNum(end)}` : `${a} to ${keyMonthName(end)} ${keyDayNum(end)}`;
 }
+
+const rtf = new Intl.RelativeTimeFormat('en-US', { numeric: 'auto' });
+
+/** "12 minutes ago", "yesterday", "3 days ago". Pass `now` from state so rendering stays pure. */
+export function timeAgo(iso: string, now: number): string {
+  const s = (Date.parse(iso) - now) / 1000;
+  const abs = Math.abs(s);
+  if (abs < 60) return 'just now';
+  if (abs < 3600) return rtf.format(Math.round(s / 60), 'minute');
+  if (abs < 86_400) return rtf.format(Math.round(s / 3600), 'hour');
+  return rtf.format(Math.round(s / 86_400), 'day');
+}

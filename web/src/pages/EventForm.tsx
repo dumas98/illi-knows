@@ -1,10 +1,10 @@
 import { useId, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { CATEGORIES, type Category, type EventInput, type OrganizerEventDTO, type PlaceDTO } from '@illi-knows/shared';
+import { CATEGORIES, type Category, type EventInput, type OrganizerEventDTO, type PlaceDTO, type TipInput } from '@illi-knows/shared';
 import { useAuth } from '../auth/context';
 import { ApiError } from '../lib/api';
 import { addDaysKey, campusMinutes, dayKey } from '../lib/format';
-import { useOrganizerEvent, usePlaces, useSaveEvent } from '../queries';
+import { useAddTip, useOrganizerEvent, usePlaces, useSaveEvent } from '../queries';
 import { useToast } from '../toast-context';
 import { SignInToOrganize, StatusPill } from './Organize';
 
@@ -20,12 +20,13 @@ interface FormState {
   locationDetail: string;
   locationText: string;
   organizationId: string;
+  hostName: string;
   isFree: boolean;
   price: string;
   priceNote: string;
 }
 
-type Errors = Partial<Record<keyof EventInput | 'form', string>>;
+type Errors = Partial<Record<keyof EventInput | 'hostName' | 'form', string>>;
 
 const hhmm = (iso: string) => {
   const m = campusMinutes(iso);
@@ -46,6 +47,7 @@ function initialState(e: OrganizerEventDTO | undefined, defaultOrg: string, toda
       locationDetail: '',
       locationText: '',
       organizationId: defaultOrg,
+      hostName: '',
       isFree: true,
       price: '',
       priceNote: ''
@@ -63,6 +65,7 @@ function initialState(e: OrganizerEventDTO | undefined, defaultOrg: string, toda
     locationDetail: e.place ? (e.locationDetail ?? '') : '',
     locationText: e.place ? '' : e.locationText,
     organizationId: e.host.organizationId ?? '',
+    hostName: e.host.name,
     isFree: e.price.isFree,
     price: e.price.amountCents ? String(e.price.amountCents / 100) : '',
     priceNote: e.price.note ?? ''
@@ -93,12 +96,16 @@ function Field({ id, label, error, hint, children }: { id: string; label: string
   );
 }
 
-function FormBody({ event, today }: { event?: OrganizerEventDTO; today: string }) {
+/** `tip` is the admin's word-of-mouth form: a typed host name, and it goes straight to the review queue. */
+function FormBody({ event, today, mode = 'event' }: { event?: OrganizerEventDTO; today: string; mode?: 'event' | 'tip' }) {
   const { me } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
   const places = usePlaces();
   const save = useSaveEvent(event?.id);
+  const addTip = useAddTip();
+  const tip = mode === 'tip';
+  const pending = save.isPending || addTip.isPending;
   const ids = useId();
   const id = (name: string) => `${ids}-${name}`;
   const [f, setF] = useState<FormState>(() => initialState(event, me?.organizations[0]?.id ?? '', today));
@@ -107,13 +114,14 @@ function FormBody({ event, today }: { event?: OrganizerEventDTO; today: string }
 
   const live = event?.status === 'published';
   const waiting = event?.status === 'in_review';
-  const canDraft = !event || event.status === 'draft' || event.status === 'changes_requested';
+  const canDraft = !tip && (!event || event.status === 'draft' || event.status === 'changes_requested');
   const describedBy = (name: string, hint = false) => (errors[name as keyof Errors] ? `${id(name)}-err` : hint ? `${id(name)}-hint` : undefined);
 
   const submit = (sendForReview: boolean) => (ev?: FormEvent) => {
     ev?.preventDefault();
     const local: Errors = {};
     if (!f.title.trim()) local.title = 'Enter an event name.';
+    if (tip && !f.hostName.trim()) local.hostName = 'Enter who is hosting it.';
     if (!f.date) local.date = 'Pick a date.';
     const place = f.offMap ? undefined : findPlace(places.data ?? [], f.placeName);
     if (!f.offMap && f.placeName.trim() && !place) local.placeKey = 'Pick a place from the list, or tick "Not on the campus map".';
@@ -139,16 +147,29 @@ function FormBody({ event, today }: { event?: OrganizerEventDTO; today: string }
       submit: sendForReview
     };
     setErrors({});
+    const onError = (err: Error) => {
+      if (err instanceof ApiError && Object.keys(err.fields).length) {
+        setErrors(Object.fromEntries(Object.entries(err.fields).map(([k, v]) => [k, v[0]])) as Errors);
+      } else setErrors({ form: err.message || 'Something went wrong. Try again.' });
+    };
+    if (tip) {
+      const { organizationId: _org, submit: _submit, ...rest } = input;
+      const tipInput: TipInput = { ...rest, hostName: f.hostName };
+      addTip.mutate(tipInput, {
+        onSuccess: saved => {
+          toast(`${saved.title} added to the review queue`);
+          navigate('/review');
+        },
+        onError
+      });
+      return;
+    }
     save.mutate(input, {
       onSuccess: saved => {
         toast(saved.status === 'in_review' ? `${saved.title} sent for review` : `${saved.title} saved as a draft`);
         navigate('/organize');
       },
-      onError: err => {
-        if (err instanceof ApiError && Object.keys(err.fields).length) {
-          setErrors(Object.fromEntries(Object.entries(err.fields).map(([k, v]) => [k, v[0]])) as Errors);
-        } else setErrors({ form: err instanceof Error ? err.message : 'Something went wrong. Try again.' });
-      }
+      onError
     });
   };
 
@@ -186,16 +207,31 @@ function FormBody({ event, today }: { event?: OrganizerEventDTO; today: string }
       </Field>
 
       <div className="two">
-        <Field id={id('host')} label="Hosted by" error={errors.organizationId}>
-          <select id={id('host')} value={f.organizationId} onChange={e => set('organizationId', e.target.value)}>
-            {me?.organizations.map(o => (
-              <option key={o.id} value={o.id}>
-                {o.name}
-              </option>
-            ))}
-            <option value="">{me?.name ?? 'Me'} (just me)</option>
-          </select>
-        </Field>
+        {tip ? (
+          <Field id={id('host')} label="Hosted by" error={errors.hostName}>
+            <input
+              id={id('host')}
+              type="text"
+              value={f.hostName}
+              maxLength={100}
+              placeholder="Lantern Society"
+              aria-invalid={!!errors.hostName}
+              aria-describedby={describedBy('hostName')}
+              onChange={e => set('hostName', e.target.value)}
+            />
+          </Field>
+        ) : (
+          <Field id={id('host')} label="Hosted by" error={errors.organizationId}>
+            <select id={id('host')} value={f.organizationId} onChange={e => set('organizationId', e.target.value)}>
+              {me?.organizations.map(o => (
+                <option key={o.id} value={o.id}>
+                  {o.name}
+                </option>
+              ))}
+              <option value="">{me?.name ?? 'Me'} (just me)</option>
+            </select>
+          </Field>
+        )}
         <Field id={id('category')} label="Category" error={errors.category}>
           <select id={id('category')} value={f.category} onChange={e => set('category', e.target.value as Category)}>
             {CATEGORIES.map(c => (
@@ -309,23 +345,27 @@ function FormBody({ event, today }: { event?: OrganizerEventDTO; today: string }
         </div>
       )}
 
-      <p className="small muted">New and edited events go to the review queue before anyone else can see them.</p>
+      <p className="small muted">
+        {tip
+          ? 'The tip goes into the pending queue like any other listing. Approve it there to publish it.'
+          : 'New and edited events go to the review queue before anyone else can see them.'}
+      </p>
       {errors.form && (
         <p className="err" role="alert">
           {errors.form}
         </p>
       )}
       <div className="row formactions">
-        <Link className="btn" to="/organize">
+        <Link className="btn" to={tip ? '/review' : '/organize'}>
           Cancel
         </Link>
         {canDraft && (
-          <button className="btn" type="button" disabled={save.isPending} onClick={submit(false)}>
+          <button className="btn" type="button" disabled={pending} onClick={submit(false)}>
             Save draft
           </button>
         )}
-        <button className="btn btn-primary" type="submit" disabled={save.isPending}>
-          {save.isPending ? 'Saving…' : 'Send for review'}
+        <button className="btn btn-primary" type="submit" disabled={pending}>
+          {pending ? 'Saving…' : tip ? 'Add to review queue' : 'Send for review'}
         </button>
       </div>
     </form>
@@ -371,6 +411,28 @@ export function EventForm() {
       <Link to="/organize">Back to your events</Link>
       <h1>{id ? 'Edit event' : 'Create event'}</h1>
       {body}
+    </section>
+  );
+}
+
+export function TipForm() {
+  const { status, me } = useAuth();
+  const [today] = useState(() => dayKey(new Date()));
+  if (status === 'loading') return <div className="skeleton">Loading…</div>;
+  if (status !== 'signed-in') return <SignInToOrganize title="Add a word-of-mouth tip" />;
+  return (
+    <section className="narrow">
+      <Link to="/review">Back to the review queue</Link>
+      <h1>Add a word-of-mouth tip</h1>
+      <p className="muted">For events you heard about from a flyer, a group chat, or a friend.</p>
+      {me?.roles.includes('admin') ? (
+        <FormBody today={today} mode="tip" />
+      ) : (
+        <div className="panel empty stack">
+          <h2>Admins only</h2>
+          <p className="muted">Ask an admin to add it, or post it yourself as an organizer.</p>
+        </div>
+      )}
     </section>
   );
 }

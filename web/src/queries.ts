@@ -11,7 +11,13 @@ import type {
   Page,
   PlaceDTO,
   PlannerDTO,
-  RsvpUpdate
+  ReviewDecisionInput,
+  ReviewItemDTO,
+  ReviewQueueDTO,
+  ReviewTab,
+  RsvpUpdate,
+  SourceSummaryDTO,
+  TipInput
 } from '@illi-knows/shared';
 import { useAuth } from './auth/context';
 import { api, query } from './lib/api';
@@ -180,5 +186,45 @@ export function useDeleteEvent() {
   return useMutation({
     mutationFn: (id: string) => api<void>(`/api/organizer/events/${id}`, { method: 'DELETE' }),
     onSuccess: () => invalidateAfterOrganizerChange(qc)
+  });
+}
+
+const isAdmin = (roles: readonly string[] | undefined) => !!roles?.includes('admin');
+
+export function useReviewQueue(tab: ReviewTab) {
+  const { me, status } = useAuth();
+  return useQuery({
+    queryKey: ['review', 'queue', tab, me?.id ?? null],
+    queryFn: ({ signal }) => api<ReviewQueueDTO>(`/api/review/queue?tab=${tab}`, { signal }),
+    enabled: status === 'signed-in' && isAdmin(me?.roles),
+    placeholderData: keepPreviousData
+  });
+}
+
+export function useSources() {
+  const { me, status } = useAuth();
+  return useQuery({
+    queryKey: ['review', 'sources', me?.id ?? null],
+    queryFn: ({ signal }) => api<SourceSummaryDTO[]>('/api/review/sources', { signal }),
+    enabled: status === 'signed-in' && isAdmin(me?.roles)
+  });
+}
+
+export function useReviewDecision() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...input }: ReviewDecisionInput & { id: string }) =>
+      api<ReviewItemDTO>(`/api/review/events/${id}/decision`, { method: 'POST', body: input }),
+    onSuccess: () => {
+      for (const key of ['review', 'events', 'event', 'organizer', 'planner']) void qc.invalidateQueries({ queryKey: [key] });
+    }
+  });
+}
+
+export function useAddTip() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: TipInput) => api<ReviewItemDTO>('/api/review/tips', { method: 'POST', body: input }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['review'] })
   });
 }

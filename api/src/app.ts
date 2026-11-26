@@ -9,12 +9,14 @@ import type { TokenVerifier } from './auth/firebase.js';
 import type { Config } from './config.js';
 import { HttpError } from './lib/errors.js';
 import { eventsRouter } from './routes/events.js';
+import { ingestRouter } from './routes/ingest.js';
 import { meRouter } from './routes/me.js';
 import { organizerRouter } from './routes/organizer.js';
 import { placesRouter } from './routes/places.js';
+import { reviewRouter } from './routes/review.js';
 
 export interface AppDeps {
-  config: Pick<Config, 'CORS_ORIGINS' | 'ALLOWED_EMAIL_DOMAIN' | 'REQUIRE_VERIFIED_EMAIL' | 'DEMO_MODE' | 'PUBLIC_WEB_URL'>;
+  config: Pick<Config, 'CORS_ORIGINS' | 'ALLOWED_EMAIL_DOMAIN' | 'REQUIRE_VERIFIED_EMAIL' | 'DEMO_MODE' | 'PUBLIC_WEB_URL'> & { INGEST_API_KEY?: string };
   verifyToken: TokenVerifier;
   logRequests?: boolean;
 }
@@ -33,6 +35,8 @@ export function createApp({ config, verifyToken, logRequests = false }: AppDeps)
   }
   app.use(helmet());
   app.use(cors({ origin: config.CORS_ORIGINS, methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], maxAge: 600 }));
+  // Ingestion batches can be bigger than form posts.
+  app.use('/api/ingest', express.json({ limit: '2mb' }));
   app.use(express.json({ limit: '100kb' }));
 
   app.get('/api/health', (_req, res) => {
@@ -56,6 +60,8 @@ export function createApp({ config, verifyToken, logRequests = false }: AppDeps)
   app.use('/api/places', placesRouter());
   app.use('/api/me', meRouter());
   app.use('/api/organizer', organizerRouter());
+  app.use('/api/review', reviewRouter());
+  app.use('/api/ingest', ingestRouter({ apiKey: config.INGEST_API_KEY }));
 
   app.use('/api', (_req, res) => {
     res.status(404).json(errorBody('not_found', 'No such endpoint.'));
@@ -68,7 +74,10 @@ export function createApp({ config, verifyToken, logRequests = false }: AppDeps)
     if (err instanceof SyntaxError && 'body' in err) {
       return void res.status(400).json(errorBody('invalid_json', 'The request body is not valid JSON.'));
     }
-    if (err instanceof mongoose.Error.ValidationError) {
+    if ((err as { type?: string }).type === 'entity.too.large') {
+      return void res.status(413).json(errorBody('payload_too_large', 'The request body is too large. Send fewer listings per request.'));
+    }
+        if (err instanceof mongoose.Error.ValidationError) {
       const details = Object.fromEntries(Object.entries(err.errors).map(([k, v]) => [k, v.message]));
       return void res.status(400).json(errorBody('invalid_request', 'Some fields are missing or invalid.', details));
     }

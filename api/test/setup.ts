@@ -11,6 +11,8 @@ export const TOKENS: Record<string, VerifiedToken> = {
   unverified: { uid: 'uid-unverified', email: 'new.person@illinois.edu', emailVerified: false, name: null }
 };
 
+export const INGEST_KEY = 'test-ingest-key-0123456789';
+
 export const fakeVerifier: TokenVerifier = async token => {
   const t = TOKENS[token];
   if (!t) throw new Error('bad token');
@@ -19,7 +21,7 @@ export const fakeVerifier: TokenVerifier = async token => {
 
 export function testApp() {
   return createApp({
-    config: { CORS_ORIGINS: ['http://localhost:5173'], ALLOWED_EMAIL_DOMAIN: 'illinois.edu', REQUIRE_VERIFIED_EMAIL: true, DEMO_MODE: false, PUBLIC_WEB_URL: 'https://illi-knows.web.app' },
+    config: { CORS_ORIGINS: ['http://localhost:5173'], ALLOWED_EMAIL_DOMAIN: 'illinois.edu', REQUIRE_VERIFIED_EMAIL: true, DEMO_MODE: false, PUBLIC_WEB_URL: 'https://illi-knows.web.app', INGEST_API_KEY: INGEST_KEY },
     verifyToken: fakeVerifier
   });
 }
