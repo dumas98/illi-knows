@@ -11,6 +11,8 @@ const RsvpSchema = new Schema(
     reminder: { type: String, enum: REMINDERS, default: 'none' },
     remindAt: { type: Date },
     reminderSentAt: { type: Date },
+    /** Failed send attempts for the current reminder. The job gives up after a few. */
+    reminderFailures: { type: Number, min: 0, default: 0 },
     foundVia: { type: String, enum: FOUND_VIA },
     checkedInAt: { type: Date },
     cancelledAt: { type: Date }

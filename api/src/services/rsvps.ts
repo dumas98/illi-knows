@@ -54,6 +54,7 @@ export async function updateRsvp(user: UserDoc, eventId: Types.ObjectId, change:
   if (remindAt && (!doc.remindAt || doc.remindAt.getTime() !== remindAt.getTime())) {
     doc.remindAt = remindAt;
     doc.reminderSentAt = undefined;
+    doc.reminderFailures = 0;
   } else if (!remindAt) {
     doc.remindAt = undefined;
   }

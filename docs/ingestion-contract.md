@@ -106,7 +106,7 @@ Flags you may see: `location_missing`, `possible_duplicate`, `date_from_image`, 
 | 400 | `invalid_request` | The `source` is missing or wrong, or `listings` is empty or has more than 200 items |
 | 401 | `bad_api_key` | Missing or wrong `X-Api-Key` |
 | 413 | `payload_too_large` | Over 2 MB. Send smaller batches |
-| 503 | `ingest_disabled` | The server has no `INGEST_API_KEY` set |
+| 503 | `not_configured` | The server has no `INGEST_API_KEY` set |
 
 ## Python example
 

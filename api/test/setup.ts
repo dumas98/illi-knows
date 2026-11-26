@@ -1,6 +1,7 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { createApp } from '../src/app.js';
+import type { Mailer } from '../src/services/mailer.js';
 import type { TokenVerifier, VerifiedToken } from '../src/auth/firebase.js';
 
 export const TOKENS: Record<string, VerifiedToken> = {
@@ -19,9 +20,12 @@ export const fakeVerifier: TokenVerifier = async token => {
   return t;
 };
 
-export function testApp() {
+export const JOBS_KEY = 'test-jobs-key-0123456789';
+
+export function testApp(extra: { mailer?: Mailer } = {}) {
   return createApp({
-    config: { CORS_ORIGINS: ['http://localhost:5173'], ALLOWED_EMAIL_DOMAIN: 'illinois.edu', REQUIRE_VERIFIED_EMAIL: true, DEMO_MODE: false, PUBLIC_WEB_URL: 'https://illi-knows.web.app', INGEST_API_KEY: INGEST_KEY },
+    ...extra,
+    config: { CORS_ORIGINS: ['http://localhost:5173'], ALLOWED_EMAIL_DOMAIN: 'illinois.edu', REQUIRE_VERIFIED_EMAIL: true, DEMO_MODE: false, PUBLIC_WEB_URL: 'https://illi-knows.web.app', INGEST_API_KEY: INGEST_KEY, JOBS_API_KEY: JOBS_KEY },
     verifyToken: fakeVerifier
   });
 }

@@ -28,3 +28,14 @@ services:
         value: "false"
       - key: INGEST_API_KEY
         generateValue: true
+      # Reminder emails. Leave EMAIL_PROVIDER unset to only log them.
+      # Set EMAIL_PROVIDER=brevo (or resend), EMAIL_API_KEY, and EMAIL_FROM in the dashboard.
+      - key: EMAIL_PROVIDER
+        sync: false
+      - key: EMAIL_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      # The scheduled GitHub Action sends this in X-Jobs-Key. Copy it into the repo's JOBS_API_KEY secret.
+      - key: JOBS_API_KEY
+        generateValue: true

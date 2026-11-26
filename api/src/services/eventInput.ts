@@ -94,7 +94,7 @@ export async function rescheduleReminders(eventId: Types.ObjectId, startsAt: Dat
       const at = reminderTime(r, startsAt);
       return Rsvp.updateMany(
         { event: eventId, reminder: r },
-        at ? { $set: { remindAt: at }, $unset: { reminderSentAt: 1 } } : { $unset: { remindAt: 1 } }
+        at ? { $set: { remindAt: at, reminderFailures: 0 }, $unset: { reminderSentAt: 1 } } : { $unset: { remindAt: 1 } }
       );
     })
   );

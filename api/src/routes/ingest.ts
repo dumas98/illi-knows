@@ -1,9 +1,8 @@
-import { timingSafeEqual } from 'node:crypto';
-import { Router, type RequestHandler } from 'express';
+import { Router } from 'express';
 import type { Types } from 'mongoose';
 import { z } from 'zod';
 import { CATEGORIES, FEED_KINDS, type FlagCode, type IngestResponse, type IngestResult } from '@illi-knows/shared';
-import { HttpError } from '../lib/errors.js';
+import { requireApiKey } from '../lib/apiKey.js';
 import { parse } from '../lib/validate.js';
 import { Event, Organization, Source } from '../models/index.js';
 import { findDuplicate } from '../services/duplicates.js';
@@ -48,21 +47,9 @@ const Listing = z
   })
   .strict();
 
-function requireKey(apiKey: string | undefined): RequestHandler {
-  return (req, _res, next) => {
-    if (!apiKey) throw new HttpError(503, 'ingest_disabled', 'Ingestion is not set up on this server. Set INGEST_API_KEY.');
-    const given = Buffer.from(req.get('x-api-key') ?? '');
-    const expected = Buffer.from(apiKey);
-    if (given.length !== expected.length || !timingSafeEqual(given, expected)) {
-      throw new HttpError(401, 'bad_api_key', 'Send the ingestion key in the X-Api-Key header.');
-    }
-    next();
-  };
-}
-
 export function ingestRouter({ apiKey }: { apiKey?: string }): Router {
   const router = Router();
-  router.use(requireKey(apiKey));
+  router.use(requireApiKey(apiKey, 'x-api-key', 'INGEST_API_KEY'));
 
   router.post('/listings', async (req, res) => {
     const env = parse(Envelope, req.body);

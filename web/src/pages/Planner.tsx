@@ -123,6 +123,7 @@ function Suggestion({ event }: { event: EventSummaryDTO }) {
 
 export function PlannerBody({ data }: { data: PlannerDTO }) {
   const places = usePlaces();
+  const { me } = useAuth();
   const { stats, upcoming } = data;
   return (
     <>
@@ -190,8 +191,8 @@ export function PlannerBody({ data }: { data: PlannerDTO }) {
       )}
       <p className="hint">
         {stats.remindersSet > 0
-          ? 'Reminder emails start once email sending is set up. Your choices are saved.'
-          : 'Set a reminder on any event page and it will show here.'}
+          ? `Reminders are emailed to ${me?.email ?? 'your Illinois address'}. Change one on its event page.`
+          : 'Set a reminder on any event page and we’ll email you before it starts.'}
       </p>
     </>
   );

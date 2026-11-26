@@ -8,15 +8,18 @@ import { authenticate } from './auth/middleware.js';
 import type { TokenVerifier } from './auth/firebase.js';
 import type { Config } from './config.js';
 import { HttpError } from './lib/errors.js';
+import { consoleMailer, type Mailer } from './services/mailer.js';
 import { eventsRouter } from './routes/events.js';
 import { ingestRouter } from './routes/ingest.js';
+import { jobsRouter } from './routes/jobs.js';
 import { meRouter } from './routes/me.js';
 import { organizerRouter } from './routes/organizer.js';
 import { placesRouter } from './routes/places.js';
 import { reviewRouter } from './routes/review.js';
 
 export interface AppDeps {
-  config: Pick<Config, 'CORS_ORIGINS' | 'ALLOWED_EMAIL_DOMAIN' | 'REQUIRE_VERIFIED_EMAIL' | 'DEMO_MODE' | 'PUBLIC_WEB_URL'> & { INGEST_API_KEY?: string };
+  config: Pick<Config, 'CORS_ORIGINS' | 'ALLOWED_EMAIL_DOMAIN' | 'REQUIRE_VERIFIED_EMAIL' | 'DEMO_MODE' | 'PUBLIC_WEB_URL'> & { INGEST_API_KEY?: string; JOBS_API_KEY?: string };
+  mailer?: Mailer;
   verifyToken: TokenVerifier;
   logRequests?: boolean;
 }
@@ -25,7 +28,7 @@ function errorBody(code: string, message: string, details?: unknown): ApiErrorBo
   return { error: details === undefined ? { code, message } : { code, message, details } };
 }
 
-export function createApp({ config, verifyToken, logRequests = false }: AppDeps): Express {
+export function createApp({ config, verifyToken, logRequests = false, mailer = consoleMailer() }: AppDeps): Express {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
@@ -62,6 +65,7 @@ export function createApp({ config, verifyToken, logRequests = false }: AppDeps)
   app.use('/api/organizer', organizerRouter());
   app.use('/api/review', reviewRouter());
   app.use('/api/ingest', ingestRouter({ apiKey: config.INGEST_API_KEY }));
+  app.use('/api/jobs', jobsRouter({ apiKey: config.JOBS_API_KEY, mailer, webUrl: config.PUBLIC_WEB_URL, allowedEmailDomain: config.ALLOWED_EMAIL_DOMAIN }));
 
   app.use('/api', (_req, res) => {
     res.status(404).json(errorBody('not_found', 'No such endpoint.'));
