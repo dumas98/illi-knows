@@ -3,8 +3,11 @@ import { Link, RouterProvider, createBrowserRouter, useRouteError } from 'react-
 import { AuthProvider } from './auth/AuthProvider';
 import { Layout } from './components/Layout';
 import { Discover } from './pages/Discover';
+import { EventForm } from './pages/EventForm';
 import { EventPage } from './pages/EventPage';
 import { Home } from './pages/Home';
+import { Insights } from './pages/Insights';
+import { Organize } from './pages/Organize';
 import { Planner } from './pages/Planner';
 import { ToastProvider } from './ToastProvider';
 
@@ -60,6 +63,11 @@ const router = createBrowserRouter([
       { path: '/discover', element: <Discover /> },
       { path: '/events/:id', element: <EventPage /> },
       { path: '/planner', element: <Planner /> },
+      { path: '/organize', element: <Organize /> },
+      { path: '/organize/new', element: <EventForm /> },
+      { path: '/organize/:id/edit', element: <EventForm /> },
+      { path: '/insights', element: <Insights /> },
+      { path: '/insights/:id', element: <Insights /> },
       { path: '*', element: <NotFound /> }
     ]
   }

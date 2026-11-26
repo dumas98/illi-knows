@@ -10,6 +10,7 @@ import type { Config } from './config.js';
 import { HttpError } from './lib/errors.js';
 import { eventsRouter } from './routes/events.js';
 import { meRouter } from './routes/me.js';
+import { organizerRouter } from './routes/organizer.js';
 import { placesRouter } from './routes/places.js';
 
 export interface AppDeps {
@@ -54,6 +55,7 @@ export function createApp({ config, verifyToken, logRequests = false }: AppDeps)
   app.use('/api/events', eventsRouter({ webUrl: config.PUBLIC_WEB_URL }));
   app.use('/api/places', placesRouter());
   app.use('/api/me', meRouter());
+  app.use('/api/organizer', organizerRouter());
 
   app.use('/api', (_req, res) => {
     res.status(404).json(errorBody('not_found', 'No such endpoint.'));

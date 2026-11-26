@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { REMINDER_LABELS, type EventSummaryDTO, type PlannerDTO } from '@illi-knows/shared';
 import { useAuth } from '../auth/context';
+import { Bars } from '../components/Bars';
 import { CampusMap } from '../components/CampusMap';
 import { LoadState } from '../components/LoadState';
 import { catClass, dayKey, fmtDay, fmtDayNum, fmtLongDay, fmtMonth, fmtPrice, fmtTime, relativeDay } from '../lib/format';
@@ -90,53 +91,6 @@ function ComingUp({ events }: { events: EventSummaryDTO[] }) {
           </div>
         );
       })}
-    </div>
-  );
-}
-
-function Bars({ title, data, orientation }: { title: string; data: { label: string; value: number }[]; orientation: 'columns' | 'rows' }) {
-  const max = Math.max(1, ...data.map(d => d.value));
-  return (
-    <div className="panel">
-      <h3>{title}</h3>
-      {data.length === 0 || data.every(d => d.value === 0) ? (
-        <p className="muted small">Nothing yet. Events you check in at this semester show up here.</p>
-      ) : orientation === 'columns' ? (
-        <div className="colchart" role="img" aria-label={`${title}: ${data.map(d => `${d.label} ${d.value}`).join(', ')}`}>
-          {data.map(d => (
-            <div key={d.label} className="col">
-              <span className="val">{d.value}</span>
-              <span className="bar" style={{ height: `${(d.value / max) * 100}%` }} />
-              <span className="lab">{d.label}</span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="rowchart" role="img" aria-label={`${title}: ${data.map(d => `${d.label} ${d.value}`).join(', ')}`}>
-          {data.map(d => (
-            <div key={d.label} className="rowbar">
-              <span className="lab">{d.label}</span>
-              <span className="track">
-                <span className="bar" style={{ width: `${(d.value / max) * 100}%` }} />
-              </span>
-              <span className="val">{d.value}</span>
-            </div>
-          ))}
-        </div>
-      )}
-      <details>
-        <summary>View as table</summary>
-        <table>
-          <tbody>
-            {data.map(d => (
-              <tr key={d.label}>
-                <td>{d.label}</td>
-                <td className="num">{d.value}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </details>
     </div>
   );
 }

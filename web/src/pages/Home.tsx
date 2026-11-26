@@ -68,10 +68,15 @@ export function Home() {
         {signedIn ? (
           <div className="sicard">
             <h2>Welcome back</h2>
-            <p className="small muted">Signed in as {me.email}. Your planner and RSVPs arrive in the next update.</p>
-            <Link className="btn btn-primary" to="/discover">
-              Find something for tonight
-            </Link>
+            <p className="small muted">Signed in as {me.email}.</p>
+            <div className="row">
+              <Link className="btn btn-primary" to="/discover">
+                Find something for tonight
+              </Link>
+              <Link className="btn" to="/planner">
+                Open your planner
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="sicard" id="signin">
@@ -118,6 +123,18 @@ export function Home() {
         </div>
       </section>
 
+      {signedIn && (
+        <section className="band">
+          <div className="stack" style={{ gap: 6 }}>
+            <h2>Running an event?</h2>
+            <p>Post it once, track RSVPs, and see how people found it.</p>
+          </div>
+          <Link className="btn btn-primary" to={me.roles.includes('organizer') ? '/organize' : '/organize/new'}>
+            {me.roles.includes('organizer') ? 'Manage your events' : 'Post an event'}
+          </Link>
+        </section>
+      )}
+
       {!signedIn && (
         <section className="lband bleed">
           <div className="row between" style={{ alignItems: 'flex-end', gap: 16 }}>
@@ -145,7 +162,7 @@ export function Home() {
               <h3>Post your own events</h3>
               <p className="small">
                 Organizers sign in here too, then track RSVPs and check-ins.{' '}
-                <button className="linkbtn dark" type="button" onClick={() => requireSignIn('Sign in to post an event')}>
+                <button className="linkbtn dark" type="button" onClick={() => requireSignIn('Sign in to post an event', () => navigate('/organize/new'))}>
                   Post an event
                 </button>
               </p>

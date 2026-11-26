@@ -5,6 +5,7 @@ import type { TokenVerifier, VerifiedToken } from '../src/auth/firebase.js';
 
 export const TOKENS: Record<string, VerifiedToken> = {
   student: { uid: 'uid-student', email: 'pat.lee@illinois.edu', emailVerified: true, name: 'Pat Lee' },
+  organizer: { uid: 'uid-organizer', email: 'tess.ng@illinois.edu', emailVerified: true, name: 'Tess Ng' },
   admin: { uid: 'uid-admin', email: 'sam.admin@illinois.edu', emailVerified: true, name: 'Sam Admin' },
   outsider: { uid: 'uid-outsider', email: 'someone@gmail.com', emailVerified: true, name: 'Someone' },
   unverified: { uid: 'uid-unverified', email: 'new.person@illinois.edu', emailVerified: false, name: null }

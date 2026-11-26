@@ -103,3 +103,54 @@ export interface PlannerDTO {
   attendedByCategory: { label: Category; value: number }[];
   suggestions: EventSummaryDTO[];
 }
+
+/** What the create and edit form sends. Dates and times are campus time. */
+export interface EventInput {
+  title: string;
+  description: string;
+  category: Category;
+  /** YYYY-MM-DD */
+  date: string;
+  /** HH:MM, 24-hour */
+  startTime: string;
+  /** HH:MM, 24-hour. Earlier than startTime means the event ends the next day. */
+  endTime: string;
+  /** A campus place key, or null when the event isn't on the map. */
+  placeKey: string | null;
+  /** Room or spot inside the place ("Room 12"). */
+  locationDetail: string;
+  /** Free-text location, used when placeKey is null. */
+  locationText: string;
+  /** Host organization, or null to host as yourself. */
+  organizationId: string | null;
+  isFree: boolean;
+  priceDollars: number | null;
+  priceNote: string;
+  /** true sends the event for review; false saves a draft. */
+  submit: boolean;
+}
+
+export interface OrganizerEventDTO extends EventSummaryDTO {
+  status: EventStatus;
+  description: string;
+  /** The event has ended. */
+  ended: boolean;
+  /** The reviewer's latest note, shown when changes are requested. */
+  reviewNote: string | null;
+  stats: { going: number; anonymous: number; checkedIn: number; views: number };
+  submittedAt: string | null;
+  updatedAt: string;
+  /** Editing is allowed (not ended, rejected, or cancelled). */
+  editable: boolean;
+}
+
+export interface InsightsDTO {
+  event: OrganizerEventDTO;
+  /** New RSVPs per day, 13 days before the event down to the event day (0). */
+  rsvpsByDay: { daysBefore: number; count: number }[];
+  /** RSVPs made more than two weeks ahead. */
+  earlier: number;
+  foundVia: { label: string; value: number }[];
+  /** Your past published events, oldest first. */
+  past: { id: string; title: string; startsAt: string; going: number; checkedIn: number }[];
+}

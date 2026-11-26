@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { EventSummaryDTO, PlaceDTO } from '@illi-knows/shared';
 import { catClass, fmtDay, fmtPrice, fmtTime } from '../lib/format';
 import { CampusMap } from './CampusMap';
 
-function EventRow({ event, n, on, onHover }: { event: EventSummaryDTO; n: number; on: boolean; onHover: (id: string | null) => void }) {
+function EventRow({ event, n, on, onHover, foot }: { event: EventSummaryDTO; n: number; on: boolean; onHover: (id: string | null) => void; foot?: (e: EventSummaryDTO) => ReactNode }) {
   return (
     <Link
       to={`/events/${event.id}`}
@@ -25,18 +25,35 @@ function EventRow({ event, n, on, onHover }: { event: EventSummaryDTO; n: number
         <h3>{event.title}</h3>
         <span className="host">{event.locationText || 'Location to be announced'}</span>
         <span className="foot">
-          <span>
-            {event.goingCount} going · {fmtPrice(event.price)}
-          </span>
-          <span className="catchip">{event.category}</span>
-          {event.viewer?.going && <span className="going">{event.viewer.anonymous ? 'Going anonymously' : 'Going'}</span>}
+          {foot ? (
+            foot(event)
+          ) : (
+            <>
+              <span>
+                {event.goingCount} going · {fmtPrice(event.price)}
+              </span>
+              <span className="catchip">{event.category}</span>
+              {event.viewer?.going && <span className="going">{event.viewer.anonymous ? 'Going anonymously' : 'Going'}</span>}
+            </>
+          )}
         </span>
       </div>
     </Link>
   );
 }
 
-export function EventMapList({ events, places, hint }: { events: EventSummaryDTO[]; places: PlaceDTO[]; hint?: string }) {
+export function EventMapList({
+  events,
+  places,
+  hint,
+  foot
+}: {
+  events: EventSummaryDTO[];
+  places: PlaceDTO[];
+  hint?: string;
+  /** Replaces the row's footer (going count, price, category). */
+  foot?: (e: EventSummaryDTO) => ReactNode;
+}) {
   const [selected, setSelected] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
   const offMap = events.filter(e => !e.place).length;
@@ -45,7 +62,7 @@ export function EventMapList({ events, places, hint }: { events: EventSummaryDTO
     <div className="msplit">
       <div className="mrows">
         {events.map((e, i) => (
-          <EventRow key={e.id} event={e} n={i + 1} on={selected === e.id} onHover={setHover} />
+          <EventRow key={e.id} event={e} n={i + 1} on={selected === e.id} onHover={setHover} foot={foot} />
         ))}
       </div>
       <div className="mmap">

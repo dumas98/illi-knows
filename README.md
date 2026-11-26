@@ -53,6 +53,7 @@ Use the **View as** menu in the header to switch between:
 - **Anonymous RSVP** counts toward the going total, but the person's name stays off the attendee list. Hosts see only a number. The person can switch it on or off later.
 - **The campus map** is a custom SVG (not Google Maps). Buildings are fixed shapes, events are pinned by building, pins are numbered to match the list next to the map, and selecting a pin opens a preview. Events without a known building are listed as "Not on the map."
 - **Every listing is reviewed** by an admin before anyone else can see it. New and edited organizer events go back to review.
+- **Anyone signed in can post an event.** Posting the first one adds the `organizer` role, which shows Manage events and Insights in the nav. Members of an organization can post and edit events for it. Editing a published event hides it until a reviewer approves it again.
 
 ### Brand (University of Illinois guidelines)
 

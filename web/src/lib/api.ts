@@ -6,11 +6,14 @@ export const API_URL = import.meta.env.VITE_API_URL ?? '';
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string;
+  /** Field name → messages, when the API rejected a form. */
+  readonly fields: Record<string, string[]>;
 
-  constructor(status: number, code: string, message: string) {
+  constructor(status: number, code: string, message: string, fields: Record<string, string[]> = {}) {
     super(message);
     this.status = status;
     this.code = code;
+    this.fields = fields;
   }
 }
 
@@ -43,8 +46,11 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
 
   if (!res.ok) {
     const body = (await res.json().catch(() => null)) as ApiErrorBody | null;
-    throw new ApiError(res.status, body?.error.code ?? 'http_error', body?.error.message ?? `Request failed (${res.status}).`);
+    const details = body?.error.details;
+    const fields = details && typeof details === 'object' && !Array.isArray(details) ? (details as Record<string, string[]>) : {};
+    throw new ApiError(res.status, body?.error.code ?? 'http_error', body?.error.message ?? `Request failed (${res.status}).`, fields);
   }
+  if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
 

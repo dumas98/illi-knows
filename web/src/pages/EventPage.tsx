@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { REMINDER_LABELS, REMINDERS, SOURCE_LABELS, type EventDetailDTO, type Reminder } from '@illi-knows/shared';
+import { EVENT_STATUS_LABELS, REMINDER_LABELS, REMINDERS, SOURCE_LABELS, type EventDetailDTO, type Reminder } from '@illi-knows/shared';
 import { useAuth } from '../auth/context';
 import { CampusMap } from '../components/CampusMap';
 import { API_URL, ApiError } from '../lib/api';
@@ -227,6 +227,12 @@ export function EventPage() {
 
   return (
     <>
+      {e.status !== 'published' && (
+        <div className="notice" role="note">
+          <strong>{EVENT_STATUS_LABELS[e.status]}.</strong> Only you, your organization, and reviewers can see this page until the event is published.{' '}
+          <Link to={`/organize/${e.id}/edit`}>Edit event</Link>
+        </div>
+      )}
       <section style={{ gap: 10 }}>
         <Link to="/discover">Back to events</Link>
         <p className="when">
@@ -298,7 +304,7 @@ export function EventPage() {
             </span>
           </div>
           <hr className="divider" />
-          <RsvpPanel event={e} />
+          {e.status === 'published' ? <RsvpPanel event={e} /> : <p className="small muted">RSVPs open once the event is published.</p>}
           <button className="btn" type="button" onClick={copyLink}>
             Copy link
           </button>

@@ -73,6 +73,12 @@ function Header() {
               )}
             </NavLink>
           )}
+          {status === 'signed-in' && me?.roles.some(r => r === 'organizer' || r === 'admin') && (
+            <>
+              <NavLink to="/organize">Manage events</NavLink>
+              <NavLink to="/insights">Insights</NavLink>
+            </>
+          )}
         </nav>
       </div>
     </header>

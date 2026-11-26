@@ -19,6 +19,14 @@ export const REMINDER_LABELS: Record<Reminder, string> = {
 
 export const EVENT_STATUSES = ['draft', 'in_review', 'changes_requested', 'published', 'rejected', 'cancelled'] as const;
 export type EventStatus = (typeof EVENT_STATUSES)[number];
+export const EVENT_STATUS_LABELS: Record<EventStatus, string> = {
+  draft: 'Draft',
+  in_review: 'In review',
+  changes_requested: 'Needs changes',
+  published: 'Published',
+  rejected: 'Rejected',
+  cancelled: 'Cancelled'
+};
 
 export const REVIEW_DECISIONS = ['submitted', 'approved', 'changes_requested', 'rejected'] as const;
 export type ReviewDecision = (typeof REVIEW_DECISIONS)[number];
@@ -39,6 +47,14 @@ export type FlagCode = (typeof FLAG_CODES)[number];
 
 export const FOUND_VIA = ['instagram', 'event_board', 'friends', 'search', 'map', 'other'] as const;
 export type FoundVia = (typeof FOUND_VIA)[number];
+export const FOUND_VIA_LABELS: Record<FoundVia, string> = {
+  instagram: 'Instagram',
+  event_board: 'Event board',
+  friends: 'Friends',
+  search: 'Search',
+  map: 'Map',
+  other: 'Other'
+};
 
 export const PLACE_KINDS = ['building', 'residence', 'library', 'venue', 'recreation', 'quad', 'green', 'field'] as const;
 export type PlaceKind = (typeof PLACE_KINDS)[number];

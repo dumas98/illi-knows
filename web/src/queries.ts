@@ -1,5 +1,18 @@
 import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { AttendeesDTO, CampusBasemap, EventDetailDTO, EventSummaryDTO, EventsQuery, Page, PlaceDTO, PlannerDTO, RsvpUpdate } from '@illi-knows/shared';
+import type {
+  AttendeesDTO,
+  CampusBasemap,
+  EventDetailDTO,
+  EventInput,
+  EventSummaryDTO,
+  EventsQuery,
+  InsightsDTO,
+  OrganizerEventDTO,
+  Page,
+  PlaceDTO,
+  PlannerDTO,
+  RsvpUpdate
+} from '@illi-knows/shared';
 import { useAuth } from './auth/context';
 import { api, query } from './lib/api';
 
@@ -118,4 +131,54 @@ export function useRsvp(id: string) {
     onSuccess: done
   });
   return { update, cancel };
+}
+
+export function useOrganizerEvents() {
+  const { me, status } = useAuth();
+  return useQuery({
+    queryKey: ['organizer', 'events', me?.id ?? null],
+    queryFn: ({ signal }) => api<OrganizerEventDTO[]>('/api/organizer/events', { signal }),
+    enabled: status === 'signed-in'
+  });
+}
+
+export function useOrganizerEvent(id: string | undefined) {
+  const { me, status } = useAuth();
+  return useQuery({
+    queryKey: ['organizer', 'event', id, me?.id ?? null],
+    queryFn: ({ signal }) => api<OrganizerEventDTO>(`/api/organizer/events/${id}`, { signal }),
+    enabled: status === 'signed-in' && !!id,
+    retry: (count, err) => (err as { status?: number }).status !== 404 && count < 2
+  });
+}
+
+export function useInsights(id: string | undefined) {
+  const { me, status } = useAuth();
+  return useQuery({
+    queryKey: ['organizer', 'insights', id, me?.id ?? null],
+    queryFn: ({ signal }) => api<InsightsDTO>(`/api/organizer/events/${id}/insights`, { signal }),
+    enabled: status === 'signed-in' && !!id
+  });
+}
+
+/** Anything an organizer change can affect: their lists, public lists, event pages, planners, and roles. */
+function invalidateAfterOrganizerChange(qc: ReturnType<typeof useQueryClient>) {
+  for (const key of ['organizer', 'events', 'event', 'planner', 'me']) void qc.invalidateQueries({ queryKey: [key] });
+}
+
+export function useSaveEvent(id?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: EventInput) =>
+      api<OrganizerEventDTO>(id ? `/api/organizer/events/${id}` : '/api/organizer/events', { method: id ? 'PUT' : 'POST', body: input }),
+    onSuccess: () => invalidateAfterOrganizerChange(qc)
+  });
+}
+
+export function useDeleteEvent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api<void>(`/api/organizer/events/${id}`, { method: 'DELETE' }),
+    onSuccess: () => invalidateAfterOrganizerChange(qc)
+  });
 }
